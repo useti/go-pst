@@ -17,7 +17,7 @@
 //go:generate msgp -tests=false
 
 syntax = "proto3";
-option go_package = "github.com/mooijtech/go-pst;properties";
+option go_package = "github.com/useti/go-pst;properties";
 
 message Journal {
   // Indicates whether the document was sent by email or posted to a server folder during journaling.

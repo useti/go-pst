@@ -21,10 +21,11 @@ import (
 	_ "embed"
 	"encoding/binary"
 	"encoding/csv"
-	"github.com/rotisserie/eris"
-	"github.com/tinylib/msgp/msgp"
 	"io"
 	"strings"
+
+	"github.com/rotisserie/eris"
+	"github.com/tinylib/msgp/msgp"
 )
 
 // PropertyContext represents the property context.
@@ -57,7 +58,7 @@ func (propertyContext *PropertyContext) GetPropertyReader(propertyID uint16, loc
 }
 
 // GetPropertyContext returns the property context (BC Table).
-// References https://github.com/mooijtech/go-pst/tree/master/docs#property-context-pc
+// References https://github.com/useti/go-pst/tree/master/docs#property-context-pc
 func (file *File) GetPropertyContext(heapOnNode *HeapOnNode) (*PropertyContext, error) {
 	tableType, err := heapOnNode.GetTableType()
 

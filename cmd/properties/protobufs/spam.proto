@@ -17,7 +17,7 @@
 //go:generate msgp -tests=false
 
 syntax = "proto3";
-option go_package = "github.com/mooijtech/go-pst;properties";
+option go_package = "github.com/useti/go-pst;properties";
 
 message Spam {
   // Specifies which folder a message was in before it was filtered into the Junk Email folder.

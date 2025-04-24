@@ -18,9 +18,10 @@ package pst
 
 import (
 	"encoding/binary"
+	"io"
+
 	"github.com/pkg/errors"
 	"github.com/rotisserie/eris"
-	"io"
 )
 
 // GetNodeBTreeOffset returns the file offset to the node b-tree.
@@ -159,7 +160,7 @@ func BTreeNodeLessFunc(a BTreeNode, b BTreeNode) bool {
 }
 
 // GetBTreeNodeRawEntries returns the raw b-tree node entries in bytes.
-// References https://github.com/mooijtech/go-pst/blob/master/docs/README.md#btpage
+// References https://github.com/useti/go-pst/blob/master/docs/README.md#btpage
 // Used by GetBTreeNodeEntries.
 func (file *File) GetBTreeNodeRawEntries(btreeNodeOffset int64, callback func([]byte, error)) {
 	var outputBuffer []byte

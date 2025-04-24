@@ -14,12 +14,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pst_test
+package main
 
 import (
 	"fmt"
 	"os"
-	"testing"
 	"time"
 
 	"github.com/rotisserie/eris"
@@ -30,7 +29,7 @@ import (
 	charsets "github.com/emersion/go-message/charset"
 )
 
-func TestExample(t *testing.T) {
+func main() {
 	pst.ExtendCharsets(func(name string, enc encoding.Encoding) {
 		charsets.RegisterEncoding(name, enc)
 	})
@@ -39,7 +38,7 @@ func TestExample(t *testing.T) {
 
 	fmt.Println("Initializing...")
 
-	reader, err := os.Open("../data/enron.pst")
+	reader, err := os.Open("../data/a.velasco.pst")
 
 	if err != nil {
 		panic(fmt.Sprintf("Failed to open PST file: %+v\n", err))
@@ -68,7 +67,7 @@ func TestExample(t *testing.T) {
 
 	// Walk through folders.
 	if err := pstFile.WalkFolders(func(folder *pst.Folder) error {
-		fmt.Printf("Walking folder: %s\n", folder.Name)
+		fmt.Printf("Walking folder: %s\n", folder.Properties.Name)
 
 		messageIterator, err := folder.GetMessageIterator()
 
@@ -85,19 +84,19 @@ func TestExample(t *testing.T) {
 
 			switch messageProperties := message.Properties.(type) {
 			case *properties.Appointment:
-				//fmt.Printf("Appointment: %s\n", messageProperties.String())
+				fmt.Printf("Appointment: %s\n", messageProperties.String())
 			case *properties.Contact:
-				//fmt.Printf("Contact: %s\n", messageProperties.String())
+				fmt.Printf("Contact: %s\n", messageProperties.String())
 			case *properties.Task:
-				//fmt.Printf("Task: %s\n", messageProperties.String())
+				fmt.Printf("Task: %s\n", messageProperties.String())
 			case *properties.RSS:
-				//fmt.Printf("RSS: %s\n", messageProperties.String())
+				fmt.Printf("RSS: %s\n", messageProperties.String())
 			case *properties.AddressBook:
-				//fmt.Printf("Address book: %s\n", messageProperties.String())
+				fmt.Printf("Address book: %s\n", messageProperties.String())
 			case *properties.Message:
 				fmt.Printf("Subject: %s\n", messageProperties.GetSubject())
 			case *properties.Note:
-				//fmt.Printf("Note: %s\n", messageProperties.String())
+				fmt.Printf("Note: %s\n", messageProperties.String())
 			default:
 				fmt.Printf("Unknown message type\n")
 			}
