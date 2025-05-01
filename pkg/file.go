@@ -19,9 +19,10 @@ package pst
 import (
 	"bytes"
 	"encoding/binary"
+	"io"
+
 	_ "github.com/emersion/go-message/charset"
 	"github.com/rotisserie/eris"
-	"io"
 )
 
 // File represents a PST file.
@@ -146,7 +147,14 @@ func (file *File) IsValidSignature() (bool, error) {
 		return false, eris.Wrap(err, "failed to read signature")
 	}
 
-	return bytes.Equal(signature, []byte("!BDN")), nil
+	if bytes.Equal(signature, []byte("!BDN")) {
+		return true, nil
+	} else if bytes.Equal(signature, []byte{
+		0xd0, 0xcf, 0x11, 0xe0,
+	}) {
+		return true, nil
+	}
+	return false, nil
 }
 
 // ContentType represents a PST, OST or PAB file.
