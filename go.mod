@@ -5,7 +5,6 @@ go 1.24.0
 require (
 	github.com/emersion/go-message v0.17.0
 	github.com/godzie44/go-uring v0.0.0-20220926161041-69611e8b13d5
-	github.com/mooijtech/go-pst/v6 v6.0.2
 	github.com/pkg/errors v0.9.1
 	github.com/rotisserie/eris v0.5.4
 	github.com/tidwall/btree v1.7.0

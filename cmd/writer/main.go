@@ -1,6 +1,7 @@
 // go-pst is a library for reading Personal Storage Table (.pst) files (written in Go/Golang).
 //
 // Copyright 2023 Marten Mooij
+// Copyright 2025 Yury Tikhoglaz
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -129,7 +130,7 @@ func WritePSTFile(outputName string) (int64, error) {
 			// Add properties to the message.
 			message.AddProperties(&properties.Message{
 				Subject: proto.String("[Go Forensics]: Goodbye, world!"),
-				From:    proto.String("info@mooijtech.com"),
+				From:    proto.String("info@useti.com"),
 				Body:    proto.String("https://goforensics.io/"),
 				// See all other available properties.
 			})
