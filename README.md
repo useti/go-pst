@@ -12,8 +12,8 @@
   <a href="https://github.com/mooijtech/go-pst/blob/master/LICENSE.txt">
       <img src="https://img.shields.io/badge/license-Apache%202-blue.svg?style=flat-square">
   </a>
-  <a href="https://github.com/mooijtech/go-pst/issues">
-    <img src="https://img.shields.io/github/issues/mooijtech/go-pst.svg?style=flat-square">
+  <a href="https://github.com/useti/go-pst/issues">
+    <img src="https://img.shields.io/github/issues/useti/go-pst.svg?style=flat-square">
   </a>
   <a href="https://github.com/mooijtech/go-pst">
       <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat-square">
