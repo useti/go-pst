@@ -33,19 +33,42 @@ func NewHeapOnNodeReader(encryptionType EncryptionType, blocks ...io.SectionRead
 	}
 
 	return &HeapOnNodeReader{
-		Blocks:         blocks,
-		BlockOffsets:   blockOffsets,
-		TotalBlockSize: blockOffset,
-		EncryptionType: encryptionType,
+		Blocks:           blocks,
+		BlockOffsets:     blockOffsets,
+		BlockIdentifiers: nil, // No identifiers for backward compatibility
+		TotalBlockSize:   blockOffset,
+		EncryptionType:   encryptionType,
+	}
+}
+
+// NewHeapOnNodeReaderWithIdentifiers creates a new Heap-on-Node reader with block identifiers.
+// Block identifiers are required for Cyclic encryption decryption.
+func NewHeapOnNodeReaderWithIdentifiers(encryptionType EncryptionType, blockIdentifiers []Identifier, blocks ...io.SectionReader) *HeapOnNodeReader {
+	blockOffsets := make([]int64, len(blocks))
+	blockOffset := int64(0)
+
+	// Get the block offsets.
+	for i, block := range blocks {
+		blockOffsets[i] = blockOffset
+		blockOffset += block.Size()
+	}
+
+	return &HeapOnNodeReader{
+		Blocks:           blocks,
+		BlockOffsets:     blockOffsets,
+		BlockIdentifiers: blockIdentifiers,
+		TotalBlockSize:   blockOffset,
+		EncryptionType:   encryptionType,
 	}
 }
 
 // HeapOnNodeReader implements io.SectionReader.
 type HeapOnNodeReader struct {
-	Blocks         []io.SectionReader
-	BlockOffsets   []int64
-	TotalBlockSize int64
-	EncryptionType EncryptionType
+	Blocks           []io.SectionReader
+	BlockOffsets     []int64
+	BlockIdentifiers []Identifier // Block identifiers for Cyclic encryption
+	TotalBlockSize   int64
+	EncryptionType   EncryptionType
 }
 
 // Size is the total byte size.
@@ -65,6 +88,7 @@ func (heapOnNodeReader *HeapOnNodeReader) ReadAt(p []byte, off int64) (n int, er
 		return heapOnNodeReader.BlockOffsets[i]+part.Size() > off
 	})
 	parts := heapOnNodeReader.Blocks[skipParts:]
+	currentBlockIndex := skipParts
 
 	// How far to skip in the first part.
 	needSkip := off
@@ -90,6 +114,14 @@ func (heapOnNodeReader *HeapOnNodeReader) ReadAt(p []byte, off int64) (n int, er
 		case EncryptionTypeNone:
 		case EncryptionTypePermute:
 			copy(readP, heapOnNodeReader.DecodeCompressibleEncryption(readP))
+		case EncryptionTypeCyclic:
+			// For Cyclic encryption, we need the block identifier as the key.
+			// The offset within the block determines the starting 'w' value.
+			var blockID Identifier
+			if heapOnNodeReader.BlockIdentifiers != nil && currentBlockIndex < len(heapOnNodeReader.BlockIdentifiers) {
+				blockID = heapOnNodeReader.BlockIdentifiers[currentBlockIndex]
+			}
+			copy(readP, heapOnNodeReader.DecodeCyclicEncryption(readP, uint32(blockID), uint16(needSkip)))
 		default:
 			return n, ErrEncryptionTypeUnsupported
 		}
@@ -99,6 +131,7 @@ func (heapOnNodeReader *HeapOnNodeReader) ReadAt(p []byte, off int64) (n int, er
 
 		if int64(pn)+needSkip == partSize {
 			parts = parts[1:]
+			currentBlockIndex++
 		}
 
 		needSkip = 0
@@ -113,28 +146,154 @@ func (heapOnNodeReader *HeapOnNodeReader) ReadAt(p []byte, off int64) (n int, er
 // DecodeCompressibleEncryption decodes the Heap-on-Node using compressible encryption.
 // References "Compressible encryption".
 func (heapOnNodeReader *HeapOnNodeReader) DecodeCompressibleEncryption(data []byte) []byte {
-	compressibleEncryption := []int{
-		0x47, 0xf1, 0xb4, 0xe6, 0x0b, 0x6a, 0x72, 0x48, 0x85, 0x4e, 0x9e, 0xeb, 0xe2, 0xf8, 0x94, 0x53, 0xe0,
-		0xbb, 0xa0, 0x02, 0xe8, 0x5a, 0x09, 0xab, 0xdb, 0xe3, 0xba, 0xc6, 0x7c, 0xc3, 0x10, 0xdd, 0x39, 0x05,
-		0x96, 0x30, 0xf5, 0x37, 0x60, 0x82, 0x8c, 0xc9, 0x13, 0x4a, 0x6b, 0x1d, 0xf3, 0xfb, 0x8f, 0x26, 0x97,
-		0xca, 0x91, 0x17, 0x01, 0xc4, 0x32, 0x2d, 0x6e, 0x31, 0x95, 0xff, 0xd9, 0x23, 0xd1, 0x00, 0x5e, 0x79,
-		0xdc, 0x44, 0x3b, 0x1a, 0x28, 0xc5, 0x61, 0x57, 0x20, 0x90, 0x3d, 0x83, 0xb9, 0x43, 0xbe, 0x67, 0xd2,
-		0x46, 0x42, 0x76, 0xc0, 0x6d, 0x5b, 0x7e, 0xb2, 0x0f, 0x16, 0x29, 0x3c, 0xa9, 0x03, 0x54, 0x0d, 0xda,
-		0x5d, 0xdf, 0xf6, 0xb7, 0xc7, 0x62, 0xcd, 0x8d, 0x06, 0xd3, 0x69, 0x5c, 0x86, 0xd6, 0x14, 0xf7, 0xa5,
-		0x66, 0x75, 0xac, 0xb1, 0xe9, 0x45, 0x21, 0x70, 0x0c, 0x87, 0x9f, 0x74, 0xa4, 0x22, 0x4c, 0x6f, 0xbf,
-		0x1f, 0x56, 0xaa, 0x2e, 0xb3, 0x78, 0x33, 0x50, 0xb0, 0xa3, 0x92, 0xbc, 0xcf, 0x19, 0x1c, 0xa7, 0x63,
-		0xcb, 0x1e, 0x4d, 0x3e, 0x4b, 0x1b, 0x9b, 0x4f, 0xe7, 0xf0, 0xee, 0xad, 0x3a, 0xb5, 0x59, 0x04, 0xea,
-		0x40, 0x55, 0x25, 0x51, 0xe5, 0x7a, 0x89, 0x38, 0x68, 0x52, 0x7b, 0xfc, 0x27, 0xae, 0xd7, 0xbd, 0xfa,
-		0x07, 0xf4, 0xcc, 0x8e, 0x5f, 0xef, 0x35, 0x9c, 0x84, 0x2b, 0x15, 0xd5, 0x77, 0x34, 0x49, 0xb6, 0x12,
-		0x0a, 0x7f, 0x71, 0x88, 0xfd, 0x9d, 0x18, 0x41, 0x7d, 0x93, 0xd8, 0x58, 0x2c, 0xce, 0xfe, 0x24, 0xaf,
-		0xde, 0xb8, 0x36, 0xc8, 0xa1, 0x80, 0xa6, 0x99, 0x98, 0xa8, 0x2f, 0x0e, 0x81, 0x65, 0x73, 0xe4, 0xc2,
-		0xa2, 0x8a, 0xd4, 0xe1, 0x11, 0xd0, 0x08, 0x8b, 0x2a, 0xf2, 0xed, 0x9a, 0x64, 0x3f, 0xc1, 0x6c, 0xf9, 0xec,
-	}
-
 	for i := 0; i < len(data); i++ {
 		temp := data[i] & 0xff
-		data[i] = byte(compressibleEncryption[temp])
+		data[i] = mpbbI[temp]
 	}
 
 	return data
 }
+
+// DecodeCyclicEncryption decodes the Heap-on-Node using cyclic encryption.
+// The dwKey is the lower DWORD of the BID associated with the data block.
+// The wOffset is the byte offset within the block where decryption starts.
+// References [MS-PST] Section 5.2 "Cyclic Encoding".
+func (heapOnNodeReader *HeapOnNodeReader) DecodeCyclicEncryption(data []byte, dwKey uint32, wOffset uint16) []byte {
+	// w = (WORD)(dwKey ^ (dwKey >> 16))
+	w := uint16(dwKey ^ (dwKey >> 16))
+	// Adjust w based on offset within block (the algorithm increments w for each byte)
+	w += wOffset
+
+	for i := 0; i < len(data); i++ {
+		b := data[i]
+		// Decode: reverse of encode
+		// Encode: b += w; b = mpbbR[b]; b += (w >> 8); b = mpbbS[b]; b -= (w >> 8); b = mpbbI[b]; b -= w
+		// Decode is the same operation since it's symmetric
+		b = byte(uint16(b) + w)
+		b = mpbbR[b]
+		b = byte(uint16(b) + (w >> 8))
+		b = mpbbS[b]
+		b = byte(uint16(b) - (w >> 8))
+		b = mpbbI[b]
+		b = byte(uint16(b) - w)
+		data[i] = b
+
+		w++
+	}
+
+	return data
+}
+
+// mpbbCrypt is the cryptographic permutation table from [MS-PST].
+// mpbbR = mpbbCrypt[0:256]   - Permutation table R
+// mpbbS = mpbbCrypt[256:512] - Permutation table S
+// mpbbI = mpbbCrypt[512:768] - Inverse permutation table
+// References [MS-PST] Section 5.1 "Permutative Encoding".
+var mpbbCrypt = [768]byte{
+	// mpbbR (0-255)
+	65, 54, 19, 98, 168, 33, 110, 187,
+	244, 22, 204, 4, 127, 100, 232, 93,
+	30, 242, 203, 42, 116, 197, 94, 53,
+	210, 149, 71, 158, 150, 45, 154, 136,
+	76, 125, 132, 63, 219, 172, 49, 182,
+	72, 95, 246, 196, 216, 57, 139, 231,
+	35, 59, 56, 142, 200, 193, 223, 37,
+	177, 32, 165, 70, 96, 78, 156, 251,
+	170, 211, 86, 81, 69, 124, 85, 0,
+	7, 201, 43, 157, 133, 155, 9, 160,
+	143, 173, 179, 15, 99, 171, 137, 75,
+	215, 167, 21, 90, 113, 102, 66, 191,
+	38, 74, 107, 152, 250, 234, 119, 83,
+	178, 112, 5, 44, 253, 89, 58, 134,
+	126, 206, 6, 235, 130, 120, 87, 199,
+	141, 67, 175, 180, 28, 212, 91, 205,
+	226, 233, 39, 79, 195, 8, 114, 128,
+	207, 176, 239, 245, 40, 109, 190, 48,
+	77, 52, 146, 213, 14, 60, 34, 50,
+	229, 228, 249, 159, 194, 209, 10, 129,
+	18, 225, 238, 145, 131, 118, 227, 151,
+	230, 97, 138, 23, 121, 164, 183, 220,
+	144, 122, 92, 140, 2, 166, 202, 105,
+	222, 80, 26, 17, 147, 185, 82, 135,
+	88, 252, 237, 29, 55, 73, 27, 106,
+	224, 41, 51, 153, 189, 108, 217, 148,
+	243, 64, 84, 111, 240, 198, 115, 184,
+	214, 62, 101, 24, 68, 31, 221, 103,
+	16, 241, 12, 25, 236, 174, 3, 161,
+	20, 123, 169, 11, 255, 248, 163, 192,
+	162, 1, 247, 46, 188, 36, 104, 117,
+	13, 254, 186, 47, 181, 208, 218, 61,
+	// mpbbS (256-511)
+	20, 83, 15, 86, 179, 200, 122, 156,
+	235, 101, 72, 23, 22, 21, 159, 2,
+	204, 84, 124, 131, 0, 13, 12, 11,
+	162, 98, 168, 118, 219, 217, 237, 199,
+	197, 164, 220, 172, 133, 116, 214, 208,
+	167, 155, 174, 154, 150, 113, 102, 195,
+	99, 153, 184, 221, 115, 146, 142, 132,
+	125, 165, 94, 209, 93, 147, 177, 87,
+	81, 80, 128, 137, 82, 148, 79, 78,
+	10, 107, 188, 141, 127, 110, 71, 70,
+	65, 64, 68, 1, 17, 203, 3, 63,
+	247, 244, 225, 169, 143, 60, 58, 249,
+	251, 240, 25, 48, 130, 9, 46, 201,
+	157, 160, 134, 73, 238, 111, 77, 109,
+	196, 45, 129, 52, 37, 135, 27, 136,
+	170, 252, 6, 161, 18, 56, 253, 76,
+	66, 114, 100, 19, 55, 36, 106, 117,
+	119, 67, 255, 230, 180, 75, 54, 92,
+	228, 216, 53, 61, 69, 185, 44, 236,
+	183, 49, 43, 41, 7, 104, 163, 14,
+	105, 123, 24, 158, 33, 57, 190, 40,
+	26, 91, 120, 245, 35, 202, 42, 176,
+	175, 62, 254, 4, 140, 231, 229, 152,
+	50, 149, 211, 246, 74, 232, 166, 234,
+	233, 243, 213, 47, 112, 32, 242, 31,
+	5, 103, 173, 85, 16, 206, 205, 227,
+	39, 59, 218, 186, 215, 194, 38, 212,
+	145, 29, 210, 28, 34, 51, 248, 250,
+	241, 90, 239, 207, 144, 182, 139, 181,
+	189, 192, 191, 8, 151, 30, 108, 226,
+	97, 224, 198, 193, 89, 171, 187, 88,
+	222, 95, 223, 96, 121, 126, 178, 138,
+	// mpbbI (512-767)
+	71, 241, 180, 230, 11, 106, 114, 72,
+	133, 78, 158, 235, 226, 248, 148, 83,
+	224, 187, 160, 2, 232, 90, 9, 171,
+	219, 227, 186, 198, 124, 195, 16, 221,
+	57, 5, 150, 48, 245, 55, 96, 130,
+	140, 201, 19, 74, 107, 29, 243, 251,
+	143, 38, 151, 202, 145, 23, 1, 196,
+	50, 45, 110, 49, 149, 255, 217, 35,
+	209, 0, 94, 121, 220, 68, 59, 26,
+	40, 197, 97, 87, 32, 144, 61, 131,
+	185, 67, 190, 103, 210, 70, 66, 118,
+	192, 109, 91, 126, 178, 15, 22, 41,
+	60, 169, 3, 84, 13, 218, 93, 223,
+	246, 183, 199, 98, 205, 141, 6, 211,
+	105, 92, 134, 214, 20, 247, 165, 102,
+	117, 172, 177, 233, 69, 33, 112, 12,
+	135, 159, 116, 164, 34, 76, 111, 191,
+	31, 86, 170, 46, 179, 120, 51, 80,
+	176, 163, 146, 188, 207, 25, 28, 167,
+	99, 203, 30, 77, 62, 75, 27, 155,
+	79, 231, 240, 238, 173, 58, 181, 89,
+	4, 234, 64, 85, 37, 81, 229, 122,
+	137, 56, 104, 82, 123, 252, 39, 174,
+	215, 189, 250, 7, 244, 204, 142, 95,
+	239, 53, 156, 132, 43, 21, 213, 119,
+	52, 73, 182, 18, 10, 127, 113, 136,
+	253, 157, 24, 65, 125, 147, 216, 88,
+	44, 206, 254, 36, 175, 222, 184, 54,
+	200, 161, 128, 166, 153, 152, 168, 47,
+	14, 129, 101, 115, 228, 194, 162, 138,
+	212, 225, 17, 208, 8, 139, 42, 242,
+	237, 154, 100, 63, 193, 108, 249, 236,
+}
+
+// Slices into the mpbbCrypt table for convenience
+var (
+	mpbbR = mpbbCrypt[0:256]   // Permutation table R
+	mpbbS = mpbbCrypt[256:512] // Permutation table S
+	mpbbI = mpbbCrypt[512:768] // Inverse permutation table
+)

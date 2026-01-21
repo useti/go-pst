@@ -84,21 +84,24 @@ func (file *File) GetHeapOnNode(btreeNode BTreeNode) (*HeapOnNode, error) {
 		}
 
 		blockReaders := make([]io.SectionReader, len(blocks))
+		blockIdentifiers := make([]Identifier, len(blocks))
 		blockReaderTotalSize := 0
 
 		for i, block := range blocks {
 			blockReaderTotalSize += int(block.Size)
 			blockReaders[i] = *NewBTreeNodeReader(block, file.Reader)
+			blockIdentifiers[i] = block.Identifier
 		}
 
 		if blocksTotalSize != uint32(blockReaderTotalSize) {
 			return nil, ErrTotalBlocksSizeMismatch
 		}
 
-		return &HeapOnNode{Reader: NewHeapOnNodeReader(file.EncryptionType, blockReaders...)}, nil
+		return &HeapOnNode{Reader: NewHeapOnNodeReaderWithIdentifiers(file.EncryptionType, blockIdentifiers, blockReaders...)}, nil
 	}
 
-	return &HeapOnNode{Reader: NewHeapOnNodeReader(file.EncryptionType, *io.NewSectionReader(file.Reader, btreeNode.FileOffset, int64(btreeNode.Size)))}, nil
+	// For single block, pass the btreeNode identifier for cyclic encryption
+	return &HeapOnNode{Reader: NewHeapOnNodeReaderWithIdentifiers(file.EncryptionType, []Identifier{btreeNode.Identifier}, *io.NewSectionReader(file.Reader, btreeNode.FileOffset, int64(btreeNode.Size)))}, nil
 }
 
 // GetHeapOnNodeReaderFromHNID returns the Heap-on-Node reader from the specified HNID (heap or node identifier).
@@ -166,7 +169,13 @@ func (file *File) GetHeapOnNodeReaderFromHID(hid Identifier, heapOnNodeReader He
 	blockStartOffset := int64(binary.LittleEndian.Uint16(startOffset))
 	blockEndOffset := int64(binary.LittleEndian.Uint16(endOffset))
 
-	return NewHeapOnNodeReader(file.EncryptionType, *io.NewSectionReader(&heapOnNodeReader.Blocks[blockIndex], blockStartOffset, blockEndOffset-blockStartOffset)), nil
+	// Get the block identifier for cyclic encryption
+	var blockIdentifier Identifier
+	if heapOnNodeReader.BlockIdentifiers != nil && blockIndex < len(heapOnNodeReader.BlockIdentifiers) {
+		blockIdentifier = heapOnNodeReader.BlockIdentifiers[blockIndex]
+	}
+
+	return NewHeapOnNodeReaderWithIdentifiers(file.EncryptionType, []Identifier{blockIdentifier}, *io.NewSectionReader(&heapOnNodeReader.Blocks[blockIndex], blockStartOffset, blockEndOffset-blockStartOffset)), nil
 }
 
 // GetHeapOnNodeFromLocalDescriptor creates a Heap-on-Node from the local descriptor.

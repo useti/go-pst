@@ -19,9 +19,10 @@ package pst
 import (
 	"bytes"
 	"encoding/binary"
+	"io"
+
 	_ "github.com/emersion/go-message/charset"
 	"github.com/rotisserie/eris"
-	"io"
 )
 
 // File represents a PST file.
@@ -223,7 +224,7 @@ type EncryptionType uint8
 const (
 	EncryptionTypeNone    EncryptionType = 0
 	EncryptionTypePermute EncryptionType = 1
-	//EncryptionTypeCyclic  EncryptionType = 2 // Not implemented currently.
+	EncryptionTypeCyclic  EncryptionType = 2
 )
 
 // GetEncryptionType returns the encryption type.
@@ -248,6 +249,8 @@ func (file *File) GetEncryptionType() (EncryptionType, error) {
 		return EncryptionTypeNone, nil
 	case 1:
 		return EncryptionTypePermute, nil
+	case 2:
+		return EncryptionTypeCyclic, nil
 	default:
 		return 0, ErrEncryptionTypeUnsupported
 	}
