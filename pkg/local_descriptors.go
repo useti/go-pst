@@ -81,18 +81,6 @@ func (file *File) GetLocalDescriptorsFromIdentifier(localDescriptorsIdentifier I
 
 	if _, err := file.Reader.ReadAt(localDescriptorsLevel, localDescriptorsNode.FileOffset+1); err != nil {
 		return nil, eris.Wrap(err, "failed to read local descriptors level")
-	} else if localDescriptorsLevel[0] > 0 {
-		// Haven't seen branch nodes yet.
-		return nil, ErrLocalDescriptorBranchNode
-	}
-
-	var localDescriptorEntrySize uint8
-
-	switch file.FormatType {
-	case FormatTypeANSI:
-		localDescriptorEntrySize = 12
-	default:
-		localDescriptorEntrySize = 24
 	}
 
 	localDescriptorsEntryCount := make([]byte, 2)
@@ -100,6 +88,8 @@ func (file *File) GetLocalDescriptorsFromIdentifier(localDescriptorsIdentifier I
 	if _, err := file.Reader.ReadAt(localDescriptorsEntryCount, localDescriptorsNode.FileOffset+2); err != nil {
 		return nil, eris.Wrap(err, "failed to get local descriptors entry count")
 	}
+
+	entryCount := binary.LittleEndian.Uint16(localDescriptorsEntryCount)
 
 	var localDescriptorsEntriesOffset int64
 
@@ -110,15 +100,72 @@ func (file *File) GetLocalDescriptorsFromIdentifier(localDescriptorsIdentifier I
 		localDescriptorsEntriesOffset = localDescriptorsNode.FileOffset + 8
 	}
 
-	localDescriptorsEntries := make([]byte, binary.LittleEndian.Uint16(localDescriptorsEntryCount)*uint16(localDescriptorEntrySize))
+	// Branch node (SIBLOCK) - contains SIENTRY entries pointing to SLBLOCKs.
+	// References [MS-PST] 2.2.2.8.3.3.2 SIBLOCKs.
+	if localDescriptorsLevel[0] > 0 {
+		var siEntrySize uint8
+
+		switch file.FormatType {
+		case FormatTypeANSI:
+			siEntrySize = 8 // nid (4 bytes) + bid (4 bytes)
+		default:
+			siEntrySize = 16 // nid (8 bytes) + bid (8 bytes)
+		}
+
+		siEntries := make([]byte, entryCount*uint16(siEntrySize))
+
+		if _, err := file.Reader.ReadAt(siEntries, localDescriptorsEntriesOffset); err != nil {
+			return nil, eris.Wrap(err, "failed to read SIBLOCK entries")
+		}
+
+		var allLocalDescriptors []LocalDescriptor
+
+		for i := 0; i < int(entryCount); i++ {
+			siEntry := siEntries[i*int(siEntrySize) : (i+1)*int(siEntrySize)]
+
+			// Get the BID of the child SLBLOCK.
+			var childBID Identifier
+
+			switch file.FormatType {
+			case FormatTypeANSI:
+				childBID = Identifier(binary.LittleEndian.Uint32(siEntry[4:8]))
+			default:
+				childBID = Identifier(binary.LittleEndian.Uint64(siEntry[8:16]))
+			}
+
+			// Recursively get local descriptors from the child block.
+			childLocalDescriptors, err := file.GetLocalDescriptorsFromIdentifier(childBID)
+
+			if err != nil {
+				return nil, eris.Wrapf(err, "failed to get local descriptors from child block (BID: %d)", childBID)
+			}
+
+			allLocalDescriptors = append(allLocalDescriptors, childLocalDescriptors...)
+		}
+
+		return allLocalDescriptors, nil
+	}
+
+	// Leaf node (SLBLOCK) - contains SLENTRY entries.
+	// References [MS-PST] 2.2.2.8.3.3.1 SLBLOCKs.
+	var localDescriptorEntrySize uint8
+
+	switch file.FormatType {
+	case FormatTypeANSI:
+		localDescriptorEntrySize = 12
+	default:
+		localDescriptorEntrySize = 24
+	}
+
+	localDescriptorsEntries := make([]byte, entryCount*uint16(localDescriptorEntrySize))
 
 	if _, err := file.Reader.ReadAt(localDescriptorsEntries, localDescriptorsEntriesOffset); err != nil {
 		return nil, eris.Wrap(err, "failed to read local descriptors entries")
 	}
 
-	localDescriptors := make([]LocalDescriptor, binary.LittleEndian.Uint16(localDescriptorsEntryCount))
+	localDescriptors := make([]LocalDescriptor, entryCount)
 
-	for i := 0; i < int(binary.LittleEndian.Uint16(localDescriptorsEntryCount)); i++ {
+	for i := 0; i < int(entryCount); i++ {
 		localDescriptorEntry := localDescriptorsEntries[i*int(localDescriptorEntrySize) : (i+1)*int(localDescriptorEntrySize)]
 
 		localDescriptors[i] = NewLocalDescriptor(localDescriptorEntry, file.FormatType)

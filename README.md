@@ -1,6 +1,6 @@
 <h1 align="center">
   <br>
-  <a href="https://github.com/useti/go-pst"><img src="https://i.imgur.com/LIicreP.png" alt="go-pst" width="280"></a>
+  <a href="https://github.com/mooijtech/go-pst"><img src="https://i.imgur.com/LIicreP.png" alt="go-pst" width="280"></a>
   <br>
   go-pst
   <br>
@@ -9,20 +9,20 @@
 <h4 align="center">A library for reading PST files (written in Go/Golang)</h4>
 
 <p align="center">
-  <a href="https://github.com/useti/go-pst/blob/master/LICENSE.txt">
+  <a href="https://github.com/mooijtech/go-pst/blob/master/LICENSE.txt">
       <img src="https://img.shields.io/badge/license-Apache%202-blue.svg?style=flat-square">
   </a>
   <a href="https://github.com/useti/go-pst/issues">
-    <img src="https://img.shields.io/github/issues/mooijtech/go-pst.svg?style=flat-square">
+    <img src="https://img.shields.io/github/issues/useti/go-pst.svg?style=flat-square">
   </a>
-  <a href="https://github.com/useti/go-pst">
+  <a href="https://github.com/mooijtech/go-pst">
       <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat-square">
   </a>
 </p>
 
 ---
 
-[![pkg.go.dev reference](https://img.shields.io/badge/pkg.go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/github.com/useti/go-pst/v6)
+[![pkg.go.dev reference](https://img.shields.io/badge/pkg.go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/github.com/mooijtech/go-pst/v6)
 
 ## Introduction
 
@@ -33,7 +33,7 @@ The PFF (Personal Folder File) and OFF (Offline Folder File) format is used to s
 ## Usage
 
 ```bash
-$ go install github.com/useti/go-pst/v6
+$ go install github.com/mooijtech/go-pst/v6
 ```
 
 ```go
@@ -41,8 +41,8 @@ package main
 
 import (
   "fmt"
-  "github.com/useti/go-pst/v6/pkg"
-  "github.com/useti/go-pst/v6/pkg/properties"
+  "github.com/mooijtech/go-pst/v6/pkg"
+  "github.com/mooijtech/go-pst/v6/pkg/properties"
   "github.com/rotisserie/eris"
   "golang.org/x/text/encoding"
   "os"
@@ -179,7 +179,7 @@ This project is licensed under the [Apache License 2.0]().
 
 ## Documentation
 
-- [Outlook Personal Folders (.pst) File Format](https://github.com/useti/go-pst/blob/master/docs/README.md)
+- [Outlook Personal Folders (.pst) File Format](https://github.com/mooijtech/go-pst/blob/master/docs/README.md)
 - [Exchange Server Protocols Master Property List](https://learn.microsoft.com/en-us/openspecs/exchange_server_protocols/ms-oxprops/f6ab1613-aefe-447d-a49c-18217230b148)
 
 ## Implementations

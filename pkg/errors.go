@@ -41,7 +41,6 @@ var (
 	ErrAttachmentIndexInvalid           = errors.New("go-pst: invalid attachment index, there are no more attachments")
 	ErrLocalDescriptorsSignatureInvalid = errors.New("go-pst: invalid local descriptors signature")
 	ErrLocalDescriptorNotFound          = errors.New("go-pst: failed to find local descriptor")
-	ErrLocalDescriptorBranchNode        = errors.New("go-pst: local descriptors level is not 0, please open an issue on GitHub for this to be implemented")
 	ErrPropertyTypeMismatch             = errors.New("go-pst: property type is not the same as the value expected from the caller")
 	ErrPropertyNoData                   = errors.New("go-pst: property has no data")
 	ErrNameToIDMapKeyNotFound           = errors.New("go-pst: failed to find key in Name-To-ID Map")
