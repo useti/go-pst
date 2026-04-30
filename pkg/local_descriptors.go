@@ -185,3 +185,321 @@ func FindLocalDescriptor(identifier Identifier, localDescriptors []LocalDescript
 
 	return LocalDescriptor{}, ErrLocalDescriptorNotFound
 }
+
+// FindLocalDescriptorGlobally searches all node b-tree leaf nodes for a local descriptor with the given identifier.
+// This is an expensive operation and should only be used in RecoveryMode as a fallback.
+func (file *File) FindLocalDescriptorGlobally(identifier Identifier) (LocalDescriptor, error) {
+	// Initialize diagnostics if needed
+	if file.Diagnostics == nil {
+		file.Diagnostics = &RecoveryDiagnostics{
+			NeighborSearchRadiusTried:  make(map[int]int),
+			NeighborSearchHitDistances: make(map[int]int),
+		}
+	}
+	file.Diagnostics.GlobalSearchAttempts++
+
+	var found LocalDescriptor
+	foundAny := false
+
+	file.NodeBTree.Scan(func(node BTreeNode) bool {
+		if node.LocalDescriptorsIdentifier == 0 {
+			return true
+		}
+
+		localDescriptors, err := file.GetLocalDescriptors(node)
+		if err != nil {
+			// Ignore errors while scanning — continue searching
+			return true
+		}
+
+		for _, ld := range localDescriptors {
+			if ld.Identifier == identifier {
+				found = ld
+				foundAny = true
+				return false // stop scanning
+			}
+		}
+
+		return true
+	})
+
+	if !foundAny {
+		return LocalDescriptor{}, ErrLocalDescriptorNotFound
+	}
+
+	file.Diagnostics.GlobalSearchHits++
+	return found, nil
+}
+
+// FindLocalDescriptorNearby searches for a local descriptor with the given identifier
+// in nodes near the supplied origin node. It scans the Node B-tree in ascending order
+// and inspects a radius of nodes before and after the origin. This is an expensive
+// recovery-only search and should be used sparingly.
+func (file *File) FindLocalDescriptorNearby(identifier Identifier, origin Identifier, radius int) (LocalDescriptor, error) {
+	if radius <= 0 {
+		radius = 3
+	}
+
+	// Initialize diagnostics maps if needed
+	if file.Diagnostics == nil {
+		file.Diagnostics = &RecoveryDiagnostics{
+			NeighborSearchRadiusTried:  make(map[int]int),
+			NeighborSearchHitDistances: make(map[int]int),
+		}
+	}
+
+	file.Diagnostics.NeighborSearchAttempts++
+	file.Diagnostics.NeighborSearchRadiusTried[radius]++
+
+	var prevBuffer []BTreeNode
+	nextToCollect := -1
+	nextDistance := 0
+	found := false
+	var foundLD LocalDescriptor
+
+	file.NodeBTree.Scan(func(node BTreeNode) bool {
+		// Maintain sliding buffer of previous nodes
+		if len(prevBuffer) >= radius {
+			prevBuffer = prevBuffer[1:]
+		}
+		prevBuffer = append(prevBuffer, node)
+
+		if nextToCollect >= 0 {
+			// We are collecting nodes after origin
+			if node.LocalDescriptorsIdentifier != 0 {
+				lds, err := file.GetLocalDescriptors(node)
+				if err == nil {
+					for _, ld := range lds {
+						if ld.Identifier == identifier {
+							foundLD = ld
+							found = true
+							// record successor hit
+							distance := nextDistance
+							file.Diagnostics.NeighborSearchHits++
+							file.Diagnostics.NeighborSearchHitDistances[distance]++
+							file.Diagnostics.NeighborSuccessorHits++
+							return false
+						}
+					}
+				}
+			}
+
+			nextToCollect--
+			nextDistance++
+			if nextToCollect < 0 {
+				return false
+			}
+
+			return true
+		}
+
+		// Haven't found origin yet; check if this node is origin
+		if node.Identifier == origin {
+			// Check previous nodes (closest first)
+			for i := len(prevBuffer) - 1; i >= 0; i-- {
+				n := prevBuffer[i]
+				if n.LocalDescriptorsIdentifier == 0 {
+					continue
+				}
+
+				lds, err := file.GetLocalDescriptors(n)
+				if err != nil {
+					continue
+				}
+
+				for _, ld := range lds {
+					if ld.Identifier == identifier {
+						foundLD = ld
+						found = true
+						// distance from origin: last element of prevBuffer is origin
+						distance := len(prevBuffer) - 1 - i
+						file.Diagnostics.NeighborSearchHits++
+						file.Diagnostics.NeighborSearchHitDistances[distance]++
+						file.Diagnostics.NeighborPredecessorHits++
+						return false
+					}
+				}
+			}
+
+			// Collect next `radius` nodes
+			nextToCollect = radius
+			nextDistance = 1
+			return true
+		}
+
+		return true
+	})
+
+	if !found {
+		return LocalDescriptor{}, ErrLocalDescriptorNotFound
+	}
+
+	return foundLD, nil
+}
+
+// FindLocalDescriptorInBlocks scans all Block B-tree leaf node payloads looking for LocalDescriptor
+// entries whose identifier matches the supplied identifier. If found, it returns the LocalDescriptor
+// constructed from the payload and validates via the DataIdentifier that it points to a block node.
+// This is an aggressive recovery heuristic and is only used in RecoveryMode.
+func (file *File) FindLocalDescriptorInBlocks(identifier Identifier) (LocalDescriptor, error) {
+	// Initialize diagnostics if needed
+	if file.Diagnostics == nil {
+		file.Diagnostics = &RecoveryDiagnostics{
+			NeighborSearchRadiusTried:  make(map[int]int),
+			NeighborSearchHitDistances: make(map[int]int),
+		}
+	}
+	file.Diagnostics.BlockScanAttempts++
+
+	var found LocalDescriptor
+	foundAny := false
+
+	maxUnalignedChecksPerBlock := 16
+	if file.RecoveryOptions != nil && file.RecoveryOptions.MaxUnalignedChecksPerBlock > 0 {
+		maxUnalignedChecksPerBlock = file.RecoveryOptions.MaxUnalignedChecksPerBlock
+	}
+
+	file.BlockBTree.Scan(func(node BTreeNode) bool {
+		// Only leaf nodes contain payloads
+		if node.NodeLevel != 0 || node.Size == 0 {
+			return true
+		}
+
+		file.Diagnostics.BlockNodesScanned++
+
+		buf := make([]byte, node.Size)
+		if _, err := file.Reader.ReadAt(buf, node.FileOffset); err != nil {
+			// Can't read this block — continue
+			return true
+		}
+
+		// Two-pass strategy:
+		// 1) fast aligned scan based on format (4- or 8-byte alignments)
+		// 2) limited unaligned fallback (byte-wise) with a cap to avoid CPU blowup
+
+		// Helper to validate and potentially return a candidate LocalDescriptor
+		validateCandidate := func(ld LocalDescriptor) bool {
+			// First ensure the DataIdentifier exists in the block b-tree
+			if _, err := file.GetBlockBTreeNode(ld.DataIdentifier); err != nil {
+				return false
+			}
+
+			// Try to fully validate by building a Heap-on-Node from the candidate
+			if _, err := file.GetHeapOnNodeFromLocalDescriptor(ld); err == nil {
+				file.Diagnostics.BlockScanHits++
+				file.Diagnostics.BlockScanValidatedHits++
+				found = ld
+				foundAny = true
+				return true
+			}
+
+			// If full validation failed but the DataIdentifier exists, treat as a weak hit
+			file.Diagnostics.BlockScanHits++
+			found = ld
+			foundAny = true
+			return true
+		}
+
+		// ANSI-format scan (12-byte SLENTRY)
+		if file.FormatType == FormatTypeANSI {
+			entrySize := 12
+			// Aligned pass: step by 4 bytes
+			for i := 0; i+entrySize <= len(buf); i += 4 {
+				candID := Identifier(binary.LittleEndian.Uint32(buf[i : i+4]))
+				if candID != identifier {
+					continue
+				}
+
+				ld := LocalDescriptor{
+					Identifier:                 candID,
+					DataIdentifier:             Identifier(binary.LittleEndian.Uint32(buf[i+4 : i+8])),
+					LocalDescriptorsIdentifier: Identifier(binary.LittleEndian.Uint32(buf[i+8 : i+12])),
+				}
+
+				if validateCandidate(ld) {
+					return false
+				}
+			}
+
+			// Limited unaligned fallback — avoid scanning every byte for large blocks
+			if file.RecoveryOptions == nil || file.RecoveryOptions.EnableUnalignedBlockScan {
+				checked := 0
+				for i := 0; i+entrySize <= len(buf) && checked < maxUnalignedChecksPerBlock; i++ {
+					candID := Identifier(binary.LittleEndian.Uint32(buf[i : i+4]))
+					if candID != identifier {
+						continue
+					}
+
+					checked++
+					file.Diagnostics.BlockScanCandidatesChecked++
+					ld := LocalDescriptor{
+						Identifier:                 candID,
+						DataIdentifier:             Identifier(binary.LittleEndian.Uint32(buf[i+4 : i+8])),
+						LocalDescriptorsIdentifier: Identifier(binary.LittleEndian.Uint32(buf[i+8 : i+12])),
+					}
+
+					if validateCandidate(ld) {
+						return false
+					}
+				}
+			}
+		} else {
+			// Unicode / non-ANSI scan (24-byte SLENTRY), align to 8 bytes for speed
+			entrySize := 24
+			sz := int(GetIdentifierSize(file.FormatType))
+			for i := 0; i+entrySize <= len(buf); i += 8 {
+				candID := GetIdentifierFromBytes(buf[i:i+sz], file.FormatType)
+				if candID != identifier {
+					continue
+				}
+
+				dataID := GetIdentifierFromBytes(buf[i+sz:i+sz+sz], file.FormatType)
+				localDescID := GetIdentifierFromBytes(buf[i+sz+sz:i+sz+sz+sz], file.FormatType)
+
+				ld := LocalDescriptor{
+					Identifier:                 candID,
+					DataIdentifier:             dataID,
+					LocalDescriptorsIdentifier: localDescID,
+				}
+
+				if validateCandidate(ld) {
+					return false
+				}
+			}
+
+			// Limited unaligned fallback for Unicode entries
+			if file.RecoveryOptions == nil || file.RecoveryOptions.EnableUnalignedBlockScan {
+				checked := 0
+				for i := 0; i+entrySize <= len(buf) && checked < maxUnalignedChecksPerBlock; i++ {
+					candID := GetIdentifierFromBytes(buf[i:i+sz], file.FormatType)
+					if candID != identifier {
+						continue
+					}
+
+					checked++
+					file.Diagnostics.BlockScanCandidatesChecked++
+					dataID := GetIdentifierFromBytes(buf[i+sz:i+sz+sz], file.FormatType)
+					localDescID := GetIdentifierFromBytes(buf[i+sz+sz:i+sz+sz+sz], file.FormatType)
+
+					ld := LocalDescriptor{
+						Identifier:                 candID,
+						DataIdentifier:             dataID,
+						LocalDescriptorsIdentifier: localDescID,
+					}
+
+					if validateCandidate(ld) {
+						return false
+					}
+				}
+			}
+		}
+
+		return true
+	})
+
+	if !foundAny {
+		return LocalDescriptor{}, ErrLocalDescriptorNotFound
+	}
+
+	return found, nil
+}

@@ -78,6 +78,14 @@ func (m *mockBTreeStore) Clear() {
 	m.nodes = make(map[Identifier]BTreeNode)
 }
 
+func (m *mockBTreeStore) Scan(iter func(item BTreeNode) bool) {
+	for _, node := range m.nodes {
+		if !iter(node) {
+			break
+		}
+	}
+}
+
 // buildSLBLOCKUnicode builds a Unicode SLBLOCK (leaf block) with SLENTRY entries.
 // SLBLOCK structure:
 // - btype (1 byte): 0x02
@@ -296,6 +304,210 @@ func TestGetLocalDescriptorsFromIdentifier_LeafNode(t *testing.T) {
 			t.Errorf("expected Identifier 100, got %d", result[0].Identifier)
 		}
 	})
+}
+
+func TestFindLocalDescriptorInBlocks_ANSI(t *testing.T) {
+	// Build an ANSI SLBLOCK with a single SLENTRY that contains our target descriptor
+	targetID := Identifier(999)
+	dataID := Identifier(2000) // must be even (LSB 0) because GetBlockBTreeNode masks LSB
+	entries := []LocalDescriptor{{Identifier: targetID, DataIdentifier: dataID, LocalDescriptorsIdentifier: 0}}
+	slblock := buildSLBLOCKANSI(entries)
+
+	blockOffset := int64(100)
+	fileData := make([]byte, blockOffset+int64(len(slblock)))
+	copy(fileData[blockOffset:], slblock)
+
+	blockStore := newMockBTreeStore()
+	blockStore.Load(BTreeNode{Identifier: 50, FileOffset: blockOffset, NodeLevel: 0, Size: uint16(len(slblock))})
+	// Add data node referenced by the descriptor
+	blockStore.Load(BTreeNode{Identifier: dataID, FileOffset: int64(5000)})
+
+	file := &File{Reader: newMockReader(fileData), FormatType: FormatTypeANSI, BlockBTree: blockStore}
+
+	ld, err := file.FindLocalDescriptorInBlocks(targetID)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if ld.Identifier != targetID || ld.DataIdentifier != dataID {
+		t.Fatalf("unexpected descriptor returned: %+v", ld)
+	}
+}
+
+func TestFindLocalDescriptorInBlocks_Unicode(t *testing.T) {
+	// Build a Unicode SLBLOCK with a single SLENTRY
+	targetID := Identifier(10000)
+	dataID := Identifier(20000)
+	entries := []LocalDescriptor{{Identifier: targetID, DataIdentifier: dataID, LocalDescriptorsIdentifier: 0}}
+	slblock := buildSLBLOCKUnicode(entries)
+
+	blockOffset := int64(200)
+	fileData := make([]byte, blockOffset+int64(len(slblock)))
+	copy(fileData[blockOffset:], slblock)
+
+	blockStore := newMockBTreeStore()
+	blockStore.Load(BTreeNode{Identifier: 51, FileOffset: blockOffset, NodeLevel: 0, Size: uint16(len(slblock))})
+	// Add data node referenced by the descriptor
+	blockStore.Load(BTreeNode{Identifier: dataID, FileOffset: int64(8000)})
+
+	file := &File{Reader: newMockReader(fileData), FormatType: FormatTypeUnicode, BlockBTree: blockStore}
+
+	ld, err := file.FindLocalDescriptorInBlocks(targetID)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if ld.Identifier != targetID || ld.DataIdentifier != dataID {
+		t.Fatalf("unexpected descriptor returned: %+v", ld)
+	}
+}
+
+func TestFindLocalDescriptorInBlocks_UnalignedANSI(t *testing.T) {
+	// Build an ANSI SLBLOCK but pad so the SLENTRY is unaligned (shift entries by 1 byte)
+	targetID := Identifier(777)
+	dataID := Identifier(3000)
+	entries := []LocalDescriptor{{Identifier: targetID, DataIdentifier: dataID, LocalDescriptorsIdentifier: 0}}
+	slblock := buildSLBLOCKANSI(entries)
+
+	headerLen := 4
+	padded := make([]byte, len(slblock)+1)
+	copy(padded[:headerLen], slblock[:headerLen])
+	padded[headerLen] = 0x00 // 1-byte padding before entries
+	copy(padded[headerLen+1:], slblock[headerLen:])
+
+	blockOffset := int64(700)
+	fileData := make([]byte, blockOffset+int64(len(padded)))
+	copy(fileData[blockOffset:], padded)
+
+	blockStore := newMockBTreeStore()
+	blockStore.Load(BTreeNode{Identifier: 99, FileOffset: blockOffset, NodeLevel: 0, Size: uint16(len(padded))})
+	blockStore.Load(BTreeNode{Identifier: dataID, FileOffset: int64(9000)})
+
+	file := &File{Reader: newMockReader(fileData), FormatType: FormatTypeANSI, BlockBTree: blockStore}
+
+	ld, err := file.FindLocalDescriptorInBlocks(targetID)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if ld.Identifier != targetID || ld.DataIdentifier != dataID {
+		t.Fatalf("unexpected descriptor returned: %+v", ld)
+	}
+
+	diags := file.GetRecoveryDiagnostics()
+	if diags.BlockScanCandidatesChecked == 0 {
+		t.Fatalf("expected unaligned candidate checks > 0, got 0")
+	}
+}
+
+func TestAggressiveCarver_RecoverANSI(t *testing.T) {
+	// Craft a block that contains a signature and a nearby ANSI SLENTRY
+	sig := []byte("IPM.Note")
+	// Build an SLENTRY for ANSI (12 bytes)
+	targetID := Identifier(4242)
+	dataID := Identifier(42424)
+	entry := make([]byte, 12)
+	binary.LittleEndian.PutUint32(entry[0:4], uint32(targetID))
+	binary.LittleEndian.PutUint32(entry[4:8], uint32(dataID))
+	binary.LittleEndian.PutUint32(entry[8:12], uint32(0))
+
+	// construct block payload: header (4 bytes), padding, signature, padding, entry
+	header := make([]byte, 4)
+	header[0] = 0x02 // btype
+	header[1] = 0x00 // cLevel
+	binary.LittleEndian.PutUint16(header[2:4], uint16(1))
+
+	payload := append(header, make([]byte, 8)...)
+	payload = append(payload, sig...)
+	payload = append(payload, make([]byte, 4)...)
+	payload = append(payload, entry...)
+
+	blockOffset := int64(1000)
+	fileData := make([]byte, blockOffset+int64(len(payload)))
+	copy(fileData[blockOffset:], payload)
+
+	blockStore := newMockBTreeStore()
+	blockStore.Load(BTreeNode{Identifier: 77, FileOffset: blockOffset, NodeLevel: 0, Size: uint16(len(payload))})
+	// Add data node referenced by the descriptor
+	blockStore.Load(BTreeNode{Identifier: dataID, FileOffset: int64(9000)})
+
+	file := &File{Reader: newMockReader(fileData), FormatType: FormatTypeANSI, BlockBTree: blockStore}
+	// Enable the aggressive carver and set signature
+	file.RecoveryOptions = &RecoveryOptions{EnableAggressiveCarver: true, CarverSignatures: [][]byte{sig}, MaxCarverCandidatesPerBlock: 8}
+
+	recovered, err := file.AggressiveCarveAndRecover()
+	if err != nil {
+		t.Fatalf("unexpected error from carver: %v", err)
+	}
+
+	if len(recovered) == 0 {
+		t.Fatalf("expected recovered descriptors from carver, got none")
+	}
+
+	found := false
+	for _, r := range recovered {
+		if r.Identifier == targetID && r.DataIdentifier == dataID {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		t.Fatalf("expected carver to recover descriptor with ID %d", targetID)
+	}
+}
+
+func TestAggressiveSLENTRYCarver_NoSignature(t *testing.T) {
+	// Craft a block that contains only an ANSI SLENTRY (no signature nearby)
+	targetID := Identifier(4243)
+	dataID := Identifier(54321)
+	entry := make([]byte, 12)
+	binary.LittleEndian.PutUint32(entry[0:4], uint32(targetID))
+	binary.LittleEndian.PutUint32(entry[4:8], uint32(dataID))
+	binary.LittleEndian.PutUint32(entry[8:12], uint32(0))
+
+	// construct block payload: header (4 bytes), padding, entry
+	header := make([]byte, 4)
+	header[0] = 0x02
+	header[1] = 0x00
+	binary.LittleEndian.PutUint16(header[2:4], uint16(1))
+
+	payload := append(header, make([]byte, 8)...)
+	payload = append(payload, entry...)
+
+	blockOffset := int64(1000)
+	fileData := make([]byte, blockOffset+int64(len(payload)))
+	copy(fileData[blockOffset:], payload)
+
+	blockStore := newMockBTreeStore()
+	blockStore.Load(BTreeNode{Identifier: 77, FileOffset: blockOffset, NodeLevel: 0, Size: uint16(len(payload))})
+	// Add data node referenced by the descriptor
+	blockStore.Load(BTreeNode{Identifier: dataID, FileOffset: int64(9000)})
+
+	file := &File{Reader: newMockReader(fileData), FormatType: FormatTypeANSI, BlockBTree: blockStore}
+	// Enable the SLENTRY carver and relaxed validation
+	file.RecoveryOptions = &RecoveryOptions{EnableSLENTRYCarver: true, EnableAggressiveCarverRelaxedValidation: true, MaxSLENTRYCandidatesPerBlock: 8, MaxCarverBlocksToScan: 16}
+
+	recovered, err := file.AggressiveCarveAndRecover()
+	if err != nil {
+		t.Fatalf("unexpected error from SLENTRY carver: %v", err)
+	}
+
+	if len(recovered) == 0 {
+		t.Fatalf("expected recovered descriptors from SLENTRY carver, got none")
+	}
+
+	found := false
+	for _, r := range recovered {
+		if r.Identifier == targetID && r.DataIdentifier == dataID {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		t.Fatalf("expected SLENTRY carver to recover descriptor with ID %d", targetID)
+	}
 }
 
 func TestGetLocalDescriptorsFromIdentifier_BranchNode(t *testing.T) {

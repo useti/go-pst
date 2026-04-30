@@ -49,4 +49,7 @@ var (
 	ErrAttachmentsNotFound              = errors.New("go-pst: message has no attachments")
 	ErrBlockIndexNotFound               = errors.New("go-pst: block index not found")
 	ErrTotalBlocksSizeMismatch          = errors.New("go-pst: block total size mismatch")
+
+	// Recovery mode warnings - these are logged but not fatal when RecoveryMode is enabled.
+	WarnTableTypeInvalidRecovery = errors.New("go-pst: invalid table type (recovery mode: continuing anyway)")
 )

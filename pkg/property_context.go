@@ -61,13 +61,25 @@ func (propertyContext *PropertyContext) GetPropertyReader(propertyID uint16, loc
 // GetPropertyContext returns the property context (BC Table).
 // References https://github.com/useti/go-pst/tree/master/docs#property-context-pc
 func (file *File) GetPropertyContext(heapOnNode *HeapOnNode) (*PropertyContext, error) {
+	// Backwards-compatible wrapper when origin node is not available.
+	zero := Identifier(0)
+	return file.GetPropertyContextFromNode(heapOnNode, BTreeNode{Identifier: zero})
+}
+
+// GetPropertyContextFromNode behaves like GetPropertyContext but uses the origin node identifier
+// when attempting localized recovery (neighbor descriptor inference).
+func (file *File) GetPropertyContextFromNode(heapOnNode *HeapOnNode, origin BTreeNode) (*PropertyContext, error) {
 	tableType, err := heapOnNode.GetTableType()
 
 	if err != nil {
 		return nil, eris.Wrap(err, "failed to get table type")
 	} else if tableType != 188 {
 		// Must be Property Context.
-		return nil, ErrTableTypeInvalid
+		// In recovery mode, skip this validation to attempt data recovery.
+		if !file.RecoveryMode {
+			return nil, ErrTableTypeInvalid
+		}
+		// Continue anyway in recovery mode - the table type is invalid but we'll try to parse it.
 	}
 
 	btreeOnHeapHeader, err := file.GetBTreeOnHeapHeader(heapOnNode)
@@ -76,7 +88,8 @@ func (file *File) GetPropertyContext(heapOnNode *HeapOnNode) (*PropertyContext, 
 		return nil, eris.Wrap(err, "failed to get b-tree-on-heap header")
 	}
 
-	keyTableReader, err := file.GetHeapOnNodeReaderFromHNID(btreeOnHeapHeader.HIDRoot, *heapOnNode.Reader)
+	// Use origin-aware HNID resolution when available.
+	keyTableReader, err := file.GetHeapOnNodeReaderFromHNIDWithOrigin(btreeOnHeapHeader.HIDRoot, *heapOnNode.Reader, &origin.Identifier)
 
 	if err != nil {
 		return nil, eris.Wrap(err, "failed to get key table reader")
@@ -94,6 +107,98 @@ func (file *File) GetPropertyContext(heapOnNode *HeapOnNode) (*PropertyContext, 
 		var property Property
 
 		// TODO - We can merge into a single ReadAt again.
+		propertyID := make([]byte, 2)
+
+		if _, err := keyTableReader.ReadAt(propertyID, offset); err != nil {
+			return nil, eris.Wrap(err, "failed to read property ID")
+		}
+
+		propertyType := make([]byte, 2)
+
+		if _, err := keyTableReader.ReadAt(propertyType, offset+2); err != nil {
+			return nil, eris.Wrap(err, "failed to read property type")
+		}
+
+		data := make([]byte, 4)
+
+		if _, err := keyTableReader.ReadAt(data, offset+4); err != nil {
+			return nil, eris.Wrap(err, "failed to read data")
+		}
+
+		property.ID = binary.LittleEndian.Uint16(propertyID)
+		property.Type = PropertyType(binary.LittleEndian.Uint16(propertyType))
+
+		// Property Context uses a HNID for any data (PropertyType) exceeding 4 bytes.
+		// Otherwise, the data is small enough to fit in the Property directly.
+		// The PropertyReader will handle type conversion.
+		if property.Type.GetDataSize() != -1 && property.Type.GetDataSize() <= 4 {
+			property.Data = data
+		} else {
+			// Variable size data.
+			property.HNID = Identifier(binary.LittleEndian.Uint32(data))
+		}
+
+		properties = append(properties, property)
+		offset += 8
+	}
+
+	return &PropertyContext{
+		Properties: properties,
+		HeapOnNode: heapOnNode,
+		File:       file,
+	}, nil
+}
+
+// GetPropertyContextWithLocalDescriptors returns the property context (BC Table),
+// using local descriptors for external node resolution. This is useful for recovery
+// when data may be stored in local descriptor nodes.
+func (file *File) GetPropertyContextWithLocalDescriptors(heapOnNode *HeapOnNode, localDescriptors []LocalDescriptor) (*PropertyContext, error) {
+	// Backwards-compatible wrapper when origin node is not provided.
+	zero := Identifier(0)
+	return file.GetPropertyContextWithLocalDescriptorsFromNode(heapOnNode, BTreeNode{Identifier: zero}, localDescriptors)
+}
+
+// GetPropertyContextWithLocalDescriptorsFromNode returns the property context (BC Table),
+// using local descriptors for external node resolution. This variant accepts an origin node
+// so recovery heuristics can attempt neighbor-local-descriptor inference.
+func (file *File) GetPropertyContextWithLocalDescriptorsFromNode(heapOnNode *HeapOnNode, origin BTreeNode, localDescriptors []LocalDescriptor) (*PropertyContext, error) {
+	tableType, err := heapOnNode.GetTableType()
+
+	if err != nil {
+		return nil, eris.Wrap(err, "failed to get table type")
+	} else if tableType != 188 {
+		// Must be Property Context.
+		// In recovery mode, skip this validation to attempt data recovery.
+		if !file.RecoveryMode {
+			return nil, ErrTableTypeInvalid
+		}
+		// Continue anyway in recovery mode - the table type is invalid but we'll try to parse it.
+	}
+
+	btreeOnHeapHeader, err := file.GetBTreeOnHeapHeaderWithLocalDescriptors(heapOnNode, localDescriptors)
+
+	if err != nil {
+		return nil, eris.Wrap(err, "failed to get b-tree-on-heap header")
+	}
+
+	// Use origin-aware HNID resolution when available.
+	keyTableReader, err := file.GetHeapOnNodeReaderFromHNIDWithOrigin(btreeOnHeapHeader.HIDRoot, *heapOnNode.Reader, &origin.Identifier, localDescriptors...)
+
+	if err != nil {
+		return nil, eris.Wrap(err, "failed to get key table reader")
+	}
+
+	keyCount := int(keyTableReader.Size()) / int(btreeOnHeapHeader.KeySize+btreeOnHeapHeader.ValueSize)
+
+	var properties []Property
+	offset := int64(0)
+
+	for i := 0; i < keyCount; i++ {
+		// PropertyContextItem represents an item within the property context.
+		// References "Property Context B-Tree-on-Heap Record".
+		// References [MS-PDF]: 2.3.3.3 PC BTH Record
+		var property Property
+
 		propertyID := make([]byte, 2)
 
 		if _, err := keyTableReader.ReadAt(propertyID, offset); err != nil {

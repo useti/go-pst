@@ -105,6 +105,38 @@ func (file *File) GetHeapOnNode(btreeNode BTreeNode) (*HeapOnNode, error) {
 	return &HeapOnNode{Reader: NewHeapOnNodeReaderWithIdentifiers(file.EncryptionType, []Identifier{btreeNode.Identifier}, *io.NewSectionReader(file.Reader, btreeNode.FileOffset, int64(btreeNode.Size)))}, nil
 }
 
+// GetHeapOnNodeReaderFromHNIDWithOrigin attempts an origin-aware HNID resolution.
+// It uses explicitly provided local descriptors first, then neighbor-based inference
+// when RecoveryMode is enabled, and falls back to the standard HNID/HID path.
+func (file *File) GetHeapOnNodeReaderFromHNIDWithOrigin(hnid Identifier, heapOnNodeReader HeapOnNodeReader, origin *Identifier, localDescriptors ...LocalDescriptor) (*HeapOnNodeReader, error) {
+	// First, respect explicitly provided local descriptors.
+	if len(localDescriptors) > 0 {
+		localDescriptor, err := FindLocalDescriptor(hnid, localDescriptors)
+
+		if err == nil {
+			localDescriptorHeapOnNode, err := file.GetHeapOnNodeFromLocalDescriptor(localDescriptor)
+
+			if err != nil {
+				return nil, eris.Wrap(err, "failed to get Heap-on-Node from local descriptor")
+			}
+
+			return localDescriptorHeapOnNode.Reader, nil
+		}
+	}
+
+	// If an origin is provided and recovery mode is enabled, attempt a localized search first.
+	if origin != nil && file.RecoveryMode {
+		if ld, err := file.FindLocalDescriptorNearby(hnid, *origin, 3); err == nil {
+			if heapOnNode, err := file.GetHeapOnNodeFromLocalDescriptor(ld); err == nil {
+				return heapOnNode.Reader, nil
+			}
+		}
+	}
+
+	// Fallback to existing behavior including global search / block lookup built into the HID path.
+	return file.GetHeapOnNodeReaderFromHNID(hnid, heapOnNodeReader, localDescriptors...)
+}
+
 // GetHeapOnNodeReaderFromHNID returns the Heap-on-Node reader from the specified HNID (heap or node identifier).
 // Note this doesn't keep track of all the passed HeapOnNodeReader blocks.
 func (file *File) GetHeapOnNodeReaderFromHNID(hnid Identifier, heapOnNodeReader HeapOnNodeReader, localDescriptors ...LocalDescriptor) (*HeapOnNodeReader, error) {
@@ -131,6 +163,34 @@ func (file *File) GetHeapOnNodeReaderFromHID(hid Identifier, heapOnNodeReader He
 		// The data is in the local descriptors (when the HNID matches a local descriptor identifier).
 		// This gives us a data identifier that points to a node in the block b-tree (another Heap-on-Node).
 		// Maybe there were no local descriptors specified in GetHeapOnNodeReaderFromHNID?
+
+		// In recovery mode, try to look up the HNID directly in the Block B-tree
+		if file.RecoveryMode {
+			// Try to interpret the HNID as a block identifier and look it up
+			if blockNode, err := file.GetBlockBTreeNode(hid); err == nil {
+				if heapOnNode, err := file.GetHeapOnNode(blockNode); err == nil {
+					return heapOnNode.Reader, nil
+				}
+			}
+
+			// If that failed, attempt to find a local descriptor anywhere in the file
+			// that references this HNID and use its DataIdentifier to build the HeapOnNode.
+			if localDesc, err := file.FindLocalDescriptorGlobally(hid); err == nil {
+				if heapOnNode, err := file.GetHeapOnNodeFromLocalDescriptor(localDesc); err == nil {
+					return heapOnNode.Reader, nil
+				}
+			}
+
+			// As a last-ditch recovery heuristic, scan block payloads for LocalDescriptor
+			// raw entries that reference this HNID. This can recover descriptors that are
+			// present as data within other blocks but are not referenced via the node b-tree.
+			if localDesc, err := file.FindLocalDescriptorInBlocks(hid); err == nil {
+				if heapOnNode, err := file.GetHeapOnNodeFromLocalDescriptor(localDesc); err == nil {
+					return heapOnNode.Reader, nil
+				}
+			}
+		}
+
 		return nil, ErrHeapOnNodeExternalNode
 	}
 

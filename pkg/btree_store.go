@@ -32,6 +32,9 @@ type BTreeStore interface {
 	Get(key BTreeNode) (BTreeNode, bool)
 	Len() int
 	Clear()
+	// Scan iterates over all items in the b-tree in ascending order.
+	// Required for recovery mode to find orphan items.
+	Scan(iter func(item BTreeNode) bool)
 }
 
 // NewBTreeStoreInMemory creates a new b-tree store using google/btree.

@@ -55,53 +55,53 @@ type Attachment struct {
 	// Contains the provider type data associated with a web reference attachment.
 	AttachmentProviderType *string `protobuf:"bytes,5,opt,name=attachment_provider_type,json=attachmentProviderType,proto3,oneof" json:"attachment_provider_type,omitempty"`
 	// Contains attachment encoding information.
-	AttachAdditionalInformation []byte `protobuf:"bytes,6,opt,name=attach_additional_information,json=attachAdditionalInformation,proto3,oneof" json:"attach_additional_information,omitempty" msg:"14095258,omitempty"`  
+	AttachAdditionalInformation []byte `protobuf:"bytes,6,opt,name=attach_additional_information,json=attachAdditionalInformation,proto3,oneof" json:"attach_additional_information,omitempty" msg:"14095258,omitempty"`
 	// Contains the base of a relative URI.
-	AttachContentBase *string `protobuf:"bytes,7,opt,name=attach_content_base,json=attachContentBase,proto3,oneof" json:"attach_content_base,omitempty" msg:"1409731,omitempty"`  
+	AttachContentBase *string `protobuf:"bytes,7,opt,name=attach_content_base,json=attachContentBase,proto3,oneof" json:"attach_content_base,omitempty" msg:"1409731,omitempty"`
 	// Contains a content identifier unique to the Message object that matches a corresponding "cid:" URI schema reference in the HTML body of the Message object.
-	AttachContentId *string `protobuf:"bytes,8,opt,name=attach_content_id,json=attachContentId,proto3,oneof" json:"attach_content_id,omitempty" msg:"1409831,omitempty"`  
+	AttachContentId *string `protobuf:"bytes,8,opt,name=attach_content_id,json=attachContentId,proto3,oneof" json:"attach_content_id,omitempty" msg:"1409831,omitempty"`
 	// Contains a relative or full URI that matches a corresponding reference in the HTML body of a Message object.
-	AttachContentLocation *string `protobuf:"bytes,9,opt,name=attach_content_location,json=attachContentLocation,proto3,oneof" json:"attach_content_location,omitempty" msg:"1409931,omitempty"`  
+	AttachContentLocation *string `protobuf:"bytes,9,opt,name=attach_content_location,json=attachContentLocation,proto3,oneof" json:"attach_content_location,omitempty" msg:"1409931,omitempty"`
 	// Contains the contents of the file to be attached.
-	AttachDataBinary []byte `protobuf:"bytes,10,opt,name=attach_data_binary,json=attachDataBinary,proto3,oneof" json:"attach_data_binary,omitempty" msg:"14081258,omitempty"`  
+	AttachDataBinary []byte `protobuf:"bytes,10,opt,name=attach_data_binary,json=attachDataBinary,proto3,oneof" json:"attach_data_binary,omitempty" msg:"14081258,omitempty"`
 	// Contains encoding information about the Attachment object.
-	AttachEncoding []byte `protobuf:"bytes,12,opt,name=attach_encoding,json=attachEncoding,proto3,oneof" json:"attach_encoding,omitempty" msg:"14082258,omitempty"`  
+	AttachEncoding []byte `protobuf:"bytes,12,opt,name=attach_encoding,json=attachEncoding,proto3,oneof" json:"attach_encoding,omitempty" msg:"14082258,omitempty"`
 	// Contains a file name extension that indicates the document type of an attachment.
-	AttachExtension *string `protobuf:"bytes,13,opt,name=attach_extension,json=attachExtension,proto3,oneof" json:"attach_extension,omitempty" msg:"1408331,omitempty"`  
+	AttachExtension *string `protobuf:"bytes,13,opt,name=attach_extension,json=attachExtension,proto3,oneof" json:"attach_extension,omitempty" msg:"1408331,omitempty"`
 	// Contains the 8.3 name of the PidTagAttachLongFilename property (section 2.595).
-	AttachFilename *string `protobuf:"bytes,14,opt,name=attach_filename,json=attachFilename,proto3,oneof" json:"attach_filename,omitempty" msg:"1408431,omitempty"`  
+	AttachFilename *string `protobuf:"bytes,14,opt,name=attach_filename,json=attachFilename,proto3,oneof" json:"attach_filename,omitempty" msg:"1408431,omitempty"`
 	// Indicates which body formats might reference this attachment when rendering data.
-	AttachFlags *int32 `protobuf:"varint,15,opt,name=attach_flags,json=attachFlags,proto3,oneof" json:"attach_flags,omitempty" msg:"141003,omitempty"`  
+	AttachFlags *int32 `protobuf:"varint,15,opt,name=attach_flags,json=attachFlags,proto3,oneof" json:"attach_flags,omitempty" msg:"141003,omitempty"`
 	// Contains the full filename and extension of the Attachment object.
-	AttachLongFilename *string `protobuf:"bytes,16,opt,name=attach_long_filename,json=attachLongFilename,proto3,oneof" json:"attach_long_filename,omitempty" msg:"1408731,omitempty"`  
+	AttachLongFilename *string `protobuf:"bytes,16,opt,name=attach_long_filename,json=attachLongFilename,proto3,oneof" json:"attach_long_filename,omitempty" msg:"1408731,omitempty"`
 	// Contains the fully-qualified path and file name with extension.
-	AttachLongPathname *string `protobuf:"bytes,17,opt,name=attach_long_pathname,json=attachLongPathname,proto3,oneof" json:"attach_long_pathname,omitempty" msg:"1409331,omitempty"`  
+	AttachLongPathname *string `protobuf:"bytes,17,opt,name=attach_long_pathname,json=attachLongPathname,proto3,oneof" json:"attach_long_pathname,omitempty" msg:"1409331,omitempty"`
 	// Indicates that a contact photo attachment is attached to a Contact object.
-	AttachmentContactPhoto *bool `protobuf:"varint,18,opt,name=attachment_contact_photo,json=attachmentContactPhoto,proto3,oneof" json:"attachment_contact_photo,omitempty" msg:"3276711,omitempty"`  
+	AttachmentContactPhoto *bool `protobuf:"varint,18,opt,name=attachment_contact_photo,json=attachmentContactPhoto,proto3,oneof" json:"attachment_contact_photo,omitempty" msg:"3276711,omitempty"`
 	// Indicates special handling for an Attachment object.
-	AttachmentFlags *int32 `protobuf:"varint,19,opt,name=attachment_flags,json=attachmentFlags,proto3,oneof" json:"attachment_flags,omitempty" msg:"327653,omitempty"`  
+	AttachmentFlags *int32 `protobuf:"varint,19,opt,name=attachment_flags,json=attachmentFlags,proto3,oneof" json:"attachment_flags,omitempty" msg:"327653,omitempty"`
 	// Indicates whether an Attachment object is hidden from the end user.
-	AttachmentHidden *bool `protobuf:"varint,20,opt,name=attachment_hidden,json=attachmentHidden,proto3,oneof" json:"attachment_hidden,omitempty" msg:"3276611,omitempty"`  
+	AttachmentHidden *bool `protobuf:"varint,20,opt,name=attachment_hidden,json=attachmentHidden,proto3,oneof" json:"attachment_hidden,omitempty" msg:"3276611,omitempty"`
 	// Contains the type of Message object to which an attachment is linked.
-	AttachmentLinkId *int32 `protobuf:"varint,21,opt,name=attachment_link_id,json=attachmentLinkId,proto3,oneof" json:"attachment_link_id,omitempty" msg:"327623,omitempty"`  
+	AttachmentLinkId *int32 `protobuf:"varint,21,opt,name=attachment_link_id,json=attachmentLinkId,proto3,oneof" json:"attachment_link_id,omitempty" msg:"327623,omitempty"`
 	// Represents the way the contents of an attachment are accessed.
-	AttachMethod *int32 `protobuf:"varint,22,opt,name=attach_method,json=attachMethod,proto3,oneof" json:"attach_method,omitempty" msg:"140853,omitempty"`  
+	AttachMethod *int32 `protobuf:"varint,22,opt,name=attach_method,json=attachMethod,proto3,oneof" json:"attach_method,omitempty" msg:"140853,omitempty"`
 	// Contains a content-type MIME header.
-	AttachMimeTag *string `protobuf:"bytes,23,opt,name=attach_mime_tag,json=attachMimeTag,proto3,oneof" json:"attach_mime_tag,omitempty" msg:"1409431,omitempty"`  
+	AttachMimeTag *string `protobuf:"bytes,23,opt,name=attach_mime_tag,json=attachMimeTag,proto3,oneof" json:"attach_mime_tag,omitempty" msg:"1409431,omitempty"`
 	// Identifies the Attachment object within its Message object.
-	AttachNumber *int32 `protobuf:"varint,24,opt,name=attach_number,json=attachNumber,proto3,oneof" json:"attach_number,omitempty" msg:"36173,omitempty"`  
+	AttachNumber *int32 `protobuf:"varint,24,opt,name=attach_number,json=attachNumber,proto3,oneof" json:"attach_number,omitempty" msg:"36173,omitempty"`
 	// Contains the 8.3 name of the PidTagAttachLongPathname property (section 2.596).
-	AttachPathname *string `protobuf:"bytes,25,opt,name=attach_pathname,json=attachPathname,proto3,oneof" json:"attach_pathname,omitempty" msg:"1408831,omitempty"`  
+	AttachPathname *string `protobuf:"bytes,25,opt,name=attach_pathname,json=attachPathname,proto3,oneof" json:"attach_pathname,omitempty" msg:"1408831,omitempty"`
 	// Contains a Windows Metafile, as specified in [MS-WMF], for the Attachment object.
-	AttachRendering []byte `protobuf:"bytes,26,opt,name=attach_rendering,json=attachRendering,proto3,oneof" json:"attach_rendering,omitempty" msg:"14089258,omitempty"`  
+	AttachRendering []byte `protobuf:"bytes,26,opt,name=attach_rendering,json=attachRendering,proto3,oneof" json:"attach_rendering,omitempty" msg:"14089258,omitempty"`
 	// Contains the size, in bytes, consumed by the Attachment object on the server.
-	AttachSize *int32 `protobuf:"varint,27,opt,name=attach_size,json=attachSize,proto3,oneof" json:"attach_size,omitempty" msg:"36163,omitempty"`  
+	AttachSize *int32 `protobuf:"varint,27,opt,name=attach_size,json=attachSize,proto3,oneof" json:"attach_size,omitempty" msg:"36163,omitempty"`
 	// Contains the identifier information for the application that supplied the Attachment object data.
-	AttachTag []byte `protobuf:"bytes,28,opt,name=attach_tag,json=attachTag,proto3,oneof" json:"attach_tag,omitempty" msg:"14090258,omitempty"`  
+	AttachTag []byte `protobuf:"bytes,28,opt,name=attach_tag,json=attachTag,proto3,oneof" json:"attach_tag,omitempty" msg:"14090258,omitempty"`
 	// Contains the name of an attachment file, modified so that it can be correlated with TNEF messages.
-	AttachTransportName *string `protobuf:"bytes,29,opt,name=attach_transport_name,json=attachTransportName,proto3,oneof" json:"attach_transport_name,omitempty" msg:"1409231,omitempty"`  
+	AttachTransportName *string `protobuf:"bytes,29,opt,name=attach_transport_name,json=attachTransportName,proto3,oneof" json:"attach_transport_name,omitempty" msg:"1409231,omitempty"`
 	// Specifies the character set of an attachment received via MIME with the content-type of text.
-	TextAttachmentCharset *string `protobuf:"bytes,31,opt,name=text_attachment_charset,json=textAttachmentCharset,proto3,oneof" json:"text_attachment_charset,omitempty" msg:"1410731,omitempty"`  
+	TextAttachmentCharset *string `protobuf:"bytes,31,opt,name=text_attachment_charset,json=textAttachmentCharset,proto3,oneof" json:"text_attachment_charset,omitempty" msg:"1410731,omitempty"`
 }
 
 func (x *Attachment) Reset() {

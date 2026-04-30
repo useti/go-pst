@@ -49,7 +49,11 @@ func (file *File) GetTableContext(heapOnNode *HeapOnNode, localDescriptors []Loc
 		return TableContext{}, eris.Wrap(err, "failed to get table type")
 	} else if tableType != 124 {
 		// Must be Table Context.
-		return TableContext{}, ErrTableTypeInvalid
+		// In recovery mode, skip this validation to attempt data recovery.
+		if !file.RecoveryMode {
+			return TableContext{}, ErrTableTypeInvalid
+		}
+		// Continue anyway in recovery mode - the table type is invalid but we'll try to parse it.
 	}
 
 	hidUserRoot, err := heapOnNode.GetHIDUserRoot()

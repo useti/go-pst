@@ -45,154 +45,154 @@ type Contact struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Specifies the state of the electronic addresses of the contact and represents a set of bit flags.
-	AddressBookProviderArrayType *int32 `protobuf:"varint,1,opt,name=address_book_provider_array_type,json=addressBookProviderArrayType,proto3,oneof" json:"address_book_provider_array_type,omitempty" msg:"328093,omitempty"`  
+	AddressBookProviderArrayType *int32 `protobuf:"varint,1,opt,name=address_book_provider_array_type,json=addressBookProviderArrayType,proto3,oneof" json:"address_book_provider_array_type,omitempty" msg:"328093,omitempty"`
 	// Specifies the country code portion of the mailing address of the contact.
-	AddressCountryCode *string `protobuf:"bytes,3,opt,name=address_country_code,json=addressCountryCode,proto3,oneof" json:"address_country_code,omitempty" msg:"3298931,omitempty"`  
+	AddressCountryCode *string `protobuf:"bytes,3,opt,name=address_country_code,json=addressCountryCode,proto3,oneof" json:"address_country_code,omitempty" msg:"3298931,omitempty"`
 	// Specifies the EntryID of the Appointment object that represents an anniversary of the contact.
-	AnniversaryEventEntryId []byte `protobuf:"bytes,4,opt,name=anniversary_event_entry_id,json=anniversaryEventEntryId,proto3,oneof" json:"anniversary_event_entry_id,omitempty" msg:"32846258,omitempty"`  
+	AnniversaryEventEntryId []byte `protobuf:"bytes,4,opt,name=anniversary_event_entry_id,json=anniversaryEventEntryId,proto3,oneof" json:"anniversary_event_entry_id,omitempty" msg:"32846258,omitempty"`
 	// Specifies to the application whether to create a Journal object for each action associated with this Contact object.
-	AutoLog *bool `protobuf:"varint,5,opt,name=auto_log,json=autoLog,proto3,oneof" json:"auto_log,omitempty" msg:"3280511,omitempty"`  
+	AutoLog *bool `protobuf:"varint,5,opt,name=auto_log,json=autoLog,proto3,oneof" json:"auto_log,omitempty" msg:"3280511,omitempty"`
 	// Specifies the EntryID of an optional Appointment object that represents the birthday of the contact.
-	BirthdayEventEntryId []byte `protobuf:"bytes,6,opt,name=birthday_event_entry_id,json=birthdayEventEntryId,proto3,oneof" json:"birthday_event_entry_id,omitempty" msg:"32845258,omitempty"`  
+	BirthdayEventEntryId []byte `protobuf:"bytes,6,opt,name=birthday_event_entry_id,json=birthdayEventEntryId,proto3,oneof" json:"birthday_event_entry_id,omitempty" msg:"32845258,omitempty"`
 	// Specifies the birthday of a contact.
-	BirthdayLocal *int64 `protobuf:"varint,7,opt,name=birthday_local,json=birthdayLocal,proto3,oneof" json:"birthday_local,omitempty" msg:"3299064,omitempty"`  
+	BirthdayLocal *int64 `protobuf:"varint,7,opt,name=birthday_local,json=birthdayLocal,proto3,oneof" json:"birthday_local,omitempty" msg:"3299064,omitempty"`
 	// Contains the image to be used on a business card.
-	BusinessCardCardPicture []byte `protobuf:"bytes,8,opt,name=business_card_card_picture,json=businessCardCardPicture,proto3,oneof" json:"business_card_card_picture,omitempty" msg:"32833258,omitempty"`  
+	BusinessCardCardPicture []byte `protobuf:"bytes,8,opt,name=business_card_card_picture,json=businessCardCardPicture,proto3,oneof" json:"business_card_card_picture,omitempty" msg:"32833258,omitempty"`
 	// Contains user customization details for displaying a contact as a business card.
-	BusinessCardDisplayDefinition []byte `protobuf:"bytes,9,opt,name=business_card_display_definition,json=businessCardDisplayDefinition,proto3,oneof" json:"business_card_display_definition,omitempty" msg:"32832258,omitempty"`  
+	BusinessCardDisplayDefinition []byte `protobuf:"bytes,9,opt,name=business_card_display_definition,json=businessCardDisplayDefinition,proto3,oneof" json:"business_card_display_definition,omitempty" msg:"32832258,omitempty"`
 	// Specifies the character set used for a Contact object.
-	ContactCharacterSet *int32 `protobuf:"varint,10,opt,name=contact_character_set,json=contactCharacterSet,proto3,oneof" json:"contact_character_set,omitempty" msg:"328033,omitempty"`  
+	ContactCharacterSet *int32 `protobuf:"varint,10,opt,name=contact_character_set,json=contactCharacterSet,proto3,oneof" json:"contact_character_set,omitempty" msg:"328033,omitempty"`
 	// Specifies the EntryID of the GAL contact to which the duplicate contact is linked.
-	ContactLinkedGlobalAddressListEntryId []byte `protobuf:"bytes,12,opt,name=contact_linked_global_address_list_entry_id,json=contactLinkedGlobalAddressListEntryId,proto3,oneof" json:"contact_linked_global_address_list_entry_id,omitempty" msg:"32994258,omitempty"`  
+	ContactLinkedGlobalAddressListEntryId []byte `protobuf:"bytes,12,opt,name=contact_linked_global_address_list_entry_id,json=contactLinkedGlobalAddressListEntryId,proto3,oneof" json:"contact_linked_global_address_list_entry_id,omitempty" msg:"32994258,omitempty"`
 	// Contains the elements of the PidLidContacts property (section 2.77).
-	ContactLinkEntry []byte `protobuf:"bytes,13,opt,name=contact_link_entry,json=contactLinkEntry,proto3,oneof" json:"contact_link_entry,omitempty" msg:"34181258,omitempty"`  
+	ContactLinkEntry []byte `protobuf:"bytes,13,opt,name=contact_link_entry,json=contactLinkEntry,proto3,oneof" json:"contact_link_entry,omitempty" msg:"34181258,omitempty"`
 	// Specifies the GUID of the GAL contact to which the duplicate contact is linked.
-	ContactLinkGlobalAddressListLinkId *uint64 `protobuf:"varint,14,opt,name=contact_link_global_address_list_link_id,json=contactLinkGlobalAddressListLinkId,proto3,oneof" json:"contact_link_global_address_list_link_id,omitempty" msg:"3300072,omitempty"`  
+	ContactLinkGlobalAddressListLinkId *uint64 `protobuf:"varint,14,opt,name=contact_link_global_address_list_link_id,json=contactLinkGlobalAddressListLinkId,proto3,oneof" json:"contact_link_global_address_list_link_id,omitempty" msg:"3300072,omitempty"`
 	// Specifies the state of the linking between the GAL contact and the duplicate contact.
-	ContactLinkGlobalAddressListLinkState *int32 `protobuf:"varint,15,opt,name=contact_link_global_address_list_link_state,json=contactLinkGlobalAddressListLinkState,proto3,oneof" json:"contact_link_global_address_list_link_state,omitempty" msg:"329983,omitempty"`  
-	ContactLinkName *string `protobuf:"bytes,17,opt,name=contact_link_name,json=contactLinkName,proto3,oneof" json:"contact_link_name,omitempty" msg:"3418231,omitempty"`  
+	ContactLinkGlobalAddressListLinkState *int32  `protobuf:"varint,15,opt,name=contact_link_global_address_list_link_state,json=contactLinkGlobalAddressListLinkState,proto3,oneof" json:"contact_link_global_address_list_link_state,omitempty" msg:"329983,omitempty"`
+	ContactLinkName                       *string `protobuf:"bytes,17,opt,name=contact_link_name,json=contactLinkName,proto3,oneof" json:"contact_link_name,omitempty" msg:"3418231,omitempty"`
 	// Contains the list of SearchKeys for a Contact object linked to by the Message object.
-	ContactLinkSearchKey []byte `protobuf:"bytes,18,opt,name=contact_link_search_key,json=contactLinkSearchKey,proto3,oneof" json:"contact_link_search_key,omitempty" msg:"34180258,omitempty"`  
+	ContactLinkSearchKey []byte `protobuf:"bytes,18,opt,name=contact_link_search_key,json=contactLinkSearchKey,proto3,oneof" json:"contact_link_search_key,omitempty" msg:"34180258,omitempty"`
 	// Contains text used to add custom text to a business card representation of a Contact object.
-	ContactUserField1 *string `protobuf:"bytes,20,opt,name=contact_user_field1,json=contactUserField1,proto3,oneof" json:"contact_user_field1,omitempty" msg:"3284731,omitempty"`  
+	ContactUserField1 *string `protobuf:"bytes,20,opt,name=contact_user_field1,json=contactUserField1,proto3,oneof" json:"contact_user_field1,omitempty" msg:"3284731,omitempty"`
 	// Contains text used to add custom text to a business card representation of a Contact object.
-	ContactUserField2 *string `protobuf:"bytes,21,opt,name=contact_user_field2,json=contactUserField2,proto3,oneof" json:"contact_user_field2,omitempty" msg:"3284831,omitempty"`  
+	ContactUserField2 *string `protobuf:"bytes,21,opt,name=contact_user_field2,json=contactUserField2,proto3,oneof" json:"contact_user_field2,omitempty" msg:"3284831,omitempty"`
 	// Contains text used to add custom text to a business card representation of a Contact object.
-	ContactUserField3 *string `protobuf:"bytes,22,opt,name=contact_user_field3,json=contactUserField3,proto3,oneof" json:"contact_user_field3,omitempty" msg:"3284931,omitempty"`  
+	ContactUserField3 *string `protobuf:"bytes,22,opt,name=contact_user_field3,json=contactUserField3,proto3,oneof" json:"contact_user_field3,omitempty" msg:"3284931,omitempty"`
 	// Contains text used to add custom text to a business card representation of a Contact object.
-	ContactUserField4 *string `protobuf:"bytes,23,opt,name=contact_user_field4,json=contactUserField4,proto3,oneof" json:"contact_user_field4,omitempty" msg:"3285031,omitempty"`  
+	ContactUserField4 *string `protobuf:"bytes,23,opt,name=contact_user_field4,json=contactUserField4,proto3,oneof" json:"contact_user_field4,omitempty" msg:"3285031,omitempty"`
 	// This property is ignored by the server and is set to an empty string by the client.
-	Department *string `protobuf:"bytes,24,opt,name=department,proto3,oneof" json:"department,omitempty" msg:"3278431,omitempty"`  
+	Department *string `protobuf:"bytes,24,opt,name=department,proto3,oneof" json:"department,omitempty" msg:"3278431,omitempty"`
 	// Specifies the 32-bit cyclic redundancy check (CRC) polynomial checksum, as specified in [ISO/IEC8802-3], calculated on the value of the PidLidDistributionListMembers property (section 2.96).
-	DistributionListChecksum *int32 `protobuf:"varint,25,opt,name=distribution_list_checksum,json=distributionListChecksum,proto3,oneof" json:"distribution_list_checksum,omitempty" msg:"328443,omitempty"`  
+	DistributionListChecksum *int32 `protobuf:"varint,25,opt,name=distribution_list_checksum,json=distributionListChecksum,proto3,oneof" json:"distribution_list_checksum,omitempty" msg:"328443,omitempty"`
 	// Specifies the name of the personal distribution list.
-	DistributionListName *string `protobuf:"bytes,27,opt,name=distribution_list_name,json=distributionListName,proto3,oneof" json:"distribution_list_name,omitempty" msg:"3285131,omitempty"`  
+	DistributionListName *string `protobuf:"bytes,27,opt,name=distribution_list_name,json=distributionListName,proto3,oneof" json:"distribution_list_name,omitempty" msg:"3285131,omitempty"`
 	// Specifies the list of EntryIDs and one-off EntryIDs corresponding to the members of the personal distribution list.
-	DistributionListStream []byte `protobuf:"bytes,29,opt,name=distribution_list_stream,json=distributionListStream,proto3,oneof" json:"distribution_list_stream,omitempty" msg:"32868258,omitempty"`  
+	DistributionListStream []byte `protobuf:"bytes,29,opt,name=distribution_list_stream,json=distributionListStream,proto3,oneof" json:"distribution_list_stream,omitempty" msg:"32868258,omitempty"`
 	// Specifies the address type of an electronic address.
-	Email1AddressType *string `protobuf:"bytes,30,opt,name=email1_address_type,json=email1AddressType,proto3,oneof" json:"email1_address_type,omitempty" msg:"3289831,omitempty"`  
+	Email1AddressType *string `protobuf:"bytes,30,opt,name=email1_address_type,json=email1AddressType,proto3,oneof" json:"email1_address_type,omitempty" msg:"3289831,omitempty"`
 	// Specifies the user-readable display name for the email address.
-	Email1DisplayName *string `protobuf:"bytes,31,opt,name=email1_display_name,json=email1DisplayName,proto3,oneof" json:"email1_display_name,omitempty" msg:"3289631,omitempty"`  
+	Email1DisplayName *string `protobuf:"bytes,31,opt,name=email1_display_name,json=email1DisplayName,proto3,oneof" json:"email1_display_name,omitempty" msg:"3289631,omitempty"`
 	// Specifies the email address of the contact.
-	Email1EmailAddress *string `protobuf:"bytes,32,opt,name=email1_email_address,json=email1EmailAddress,proto3,oneof" json:"email1_email_address,omitempty" msg:"3289931,omitempty"`  
+	Email1EmailAddress *string `protobuf:"bytes,32,opt,name=email1_email_address,json=email1EmailAddress,proto3,oneof" json:"email1_email_address,omitempty" msg:"3289931,omitempty"`
 	// Specifies the SMTP email address that corresponds to the email address for the Contact object.
-	Email1OriginalDisplayName *string `protobuf:"bytes,33,opt,name=email1_original_display_name,json=email1OriginalDisplayName,proto3,oneof" json:"email1_original_display_name,omitempty" msg:"3290031,omitempty"`  
+	Email1OriginalDisplayName *string `protobuf:"bytes,33,opt,name=email1_original_display_name,json=email1OriginalDisplayName,proto3,oneof" json:"email1_original_display_name,omitempty" msg:"3290031,omitempty"`
 	// Specifies the EntryID of the object corresponding to this electronic address.
-	Email1OriginalEntryId []byte `protobuf:"bytes,34,opt,name=email1_original_entry_id,json=email1OriginalEntryId,proto3,oneof" json:"email1_original_entry_id,omitempty" msg:"32901258,omitempty"`  
+	Email1OriginalEntryId []byte `protobuf:"bytes,34,opt,name=email1_original_entry_id,json=email1OriginalEntryId,proto3,oneof" json:"email1_original_entry_id,omitempty" msg:"32901258,omitempty"`
 	// Specifies the address type of the electronic address.
-	Email2AddressType *string `protobuf:"bytes,35,opt,name=email2_address_type,json=email2AddressType,proto3,oneof" json:"email2_address_type,omitempty" msg:"3291431,omitempty"`  
+	Email2AddressType *string `protobuf:"bytes,35,opt,name=email2_address_type,json=email2AddressType,proto3,oneof" json:"email2_address_type,omitempty" msg:"3291431,omitempty"`
 	// Specifies the user-readable display name for the email address.
-	Email2DisplayName *string `protobuf:"bytes,36,opt,name=email2_display_name,json=email2DisplayName,proto3,oneof" json:"email2_display_name,omitempty" msg:"3291231,omitempty"`  
+	Email2DisplayName *string `protobuf:"bytes,36,opt,name=email2_display_name,json=email2DisplayName,proto3,oneof" json:"email2_display_name,omitempty" msg:"3291231,omitempty"`
 	// Specifies the email address of the contact.
-	Email2EmailAddress *string `protobuf:"bytes,37,opt,name=email2_email_address,json=email2EmailAddress,proto3,oneof" json:"email2_email_address,omitempty" msg:"3291531,omitempty"`  
+	Email2EmailAddress *string `protobuf:"bytes,37,opt,name=email2_email_address,json=email2EmailAddress,proto3,oneof" json:"email2_email_address,omitempty" msg:"3291531,omitempty"`
 	// Specifies the SMTP email address that corresponds to the email address for the Contact object.
-	Email2OriginalDisplayName *string `protobuf:"bytes,38,opt,name=email2_original_display_name,json=email2OriginalDisplayName,proto3,oneof" json:"email2_original_display_name,omitempty" msg:"3291631,omitempty"`  
+	Email2OriginalDisplayName *string `protobuf:"bytes,38,opt,name=email2_original_display_name,json=email2OriginalDisplayName,proto3,oneof" json:"email2_original_display_name,omitempty" msg:"3291631,omitempty"`
 	// Specifies the EntryID of the object that corresponds to this electronic address.
-	Email2OriginalEntryId []byte `protobuf:"bytes,39,opt,name=email2_original_entry_id,json=email2OriginalEntryId,proto3,oneof" json:"email2_original_entry_id,omitempty" msg:"32917258,omitempty"`  
+	Email2OriginalEntryId []byte `protobuf:"bytes,39,opt,name=email2_original_entry_id,json=email2OriginalEntryId,proto3,oneof" json:"email2_original_entry_id,omitempty" msg:"32917258,omitempty"`
 	// Specifies the address type of the electronic address.
-	Email3AddressType *string `protobuf:"bytes,40,opt,name=email3_address_type,json=email3AddressType,proto3,oneof" json:"email3_address_type,omitempty" msg:"3293031,omitempty"`  
+	Email3AddressType *string `protobuf:"bytes,40,opt,name=email3_address_type,json=email3AddressType,proto3,oneof" json:"email3_address_type,omitempty" msg:"3293031,omitempty"`
 	// Specifies the user-readable display name for the email address.
-	Email3DisplayName *string `protobuf:"bytes,41,opt,name=email3_display_name,json=email3DisplayName,proto3,oneof" json:"email3_display_name,omitempty" msg:"3292831,omitempty"`  
+	Email3DisplayName *string `protobuf:"bytes,41,opt,name=email3_display_name,json=email3DisplayName,proto3,oneof" json:"email3_display_name,omitempty" msg:"3292831,omitempty"`
 	// Specifies the email address of the contact.
-	Email3EmailAddress *string `protobuf:"bytes,42,opt,name=email3_email_address,json=email3EmailAddress,proto3,oneof" json:"email3_email_address,omitempty" msg:"3293131,omitempty"`  
+	Email3EmailAddress *string `protobuf:"bytes,42,opt,name=email3_email_address,json=email3EmailAddress,proto3,oneof" json:"email3_email_address,omitempty" msg:"3293131,omitempty"`
 	// Specifies the SMTP email address that corresponds to the email address for the Contact object.
-	Email3OriginalDisplayName *string `protobuf:"bytes,43,opt,name=email3_original_display_name,json=email3OriginalDisplayName,proto3,oneof" json:"email3_original_display_name,omitempty" msg:"3293231,omitempty"`  
+	Email3OriginalDisplayName *string `protobuf:"bytes,43,opt,name=email3_original_display_name,json=email3OriginalDisplayName,proto3,oneof" json:"email3_original_display_name,omitempty" msg:"3293231,omitempty"`
 	// Specifies the EntryID of the object that corresponds to this electronic address.
-	Email3OriginalEntryId []byte `protobuf:"bytes,44,opt,name=email3_original_entry_id,json=email3OriginalEntryId,proto3,oneof" json:"email3_original_entry_id,omitempty" msg:"32933258,omitempty"`  
+	Email3OriginalEntryId []byte `protobuf:"bytes,44,opt,name=email3_original_entry_id,json=email3OriginalEntryId,proto3,oneof" json:"email3_original_entry_id,omitempty" msg:"32933258,omitempty"`
 	// Contains the string value "FAX".
-	Fax1AddressType *string `protobuf:"bytes,45,opt,name=fax1_address_type,json=fax1AddressType,proto3,oneof" json:"fax1_address_type,omitempty" msg:"3294631,omitempty"`  
+	Fax1AddressType *string `protobuf:"bytes,45,opt,name=fax1_address_type,json=fax1AddressType,proto3,oneof" json:"fax1_address_type,omitempty" msg:"3294631,omitempty"`
 	// Contains a user-readable display name, followed by the "@" character, followed by a fax number.
-	Fax1EmailAddress *string `protobuf:"bytes,46,opt,name=fax1_email_address,json=fax1EmailAddress,proto3,oneof" json:"fax1_email_address,omitempty" msg:"3294731,omitempty"`  
+	Fax1EmailAddress *string `protobuf:"bytes,46,opt,name=fax1_email_address,json=fax1EmailAddress,proto3,oneof" json:"fax1_email_address,omitempty" msg:"3294731,omitempty"`
 	// Contains the same value as the PidTagNormalizedSubject property (section 2.812).
-	Fax1OriginalDisplayName *string `protobuf:"bytes,47,opt,name=fax1_original_display_name,json=fax1OriginalDisplayName,proto3,oneof" json:"fax1_original_display_name,omitempty" msg:"3294831,omitempty"`  
+	Fax1OriginalDisplayName *string `protobuf:"bytes,47,opt,name=fax1_original_display_name,json=fax1OriginalDisplayName,proto3,oneof" json:"fax1_original_display_name,omitempty" msg:"3294831,omitempty"`
 	// Specifies a one-off EntryID that corresponds to this fax address.
-	Fax1OriginalEntryId []byte `protobuf:"bytes,48,opt,name=fax1_original_entry_id,json=fax1OriginalEntryId,proto3,oneof" json:"fax1_original_entry_id,omitempty" msg:"32949258,omitempty"`  
+	Fax1OriginalEntryId []byte `protobuf:"bytes,48,opt,name=fax1_original_entry_id,json=fax1OriginalEntryId,proto3,oneof" json:"fax1_original_entry_id,omitempty" msg:"32949258,omitempty"`
 	// Contains the string value "FAX".
-	Fax2AddressType *string `protobuf:"bytes,49,opt,name=fax2_address_type,json=fax2AddressType,proto3,oneof" json:"fax2_address_type,omitempty" msg:"3296231,omitempty"`  
+	Fax2AddressType *string `protobuf:"bytes,49,opt,name=fax2_address_type,json=fax2AddressType,proto3,oneof" json:"fax2_address_type,omitempty" msg:"3296231,omitempty"`
 	// Contains a user-readable display name, followed by the "@" character, followed by a fax number.
-	Fax2EmailAddress *string `protobuf:"bytes,50,opt,name=fax2_email_address,json=fax2EmailAddress,proto3,oneof" json:"fax2_email_address,omitempty" msg:"3296331,omitempty"`  
+	Fax2EmailAddress *string `protobuf:"bytes,50,opt,name=fax2_email_address,json=fax2EmailAddress,proto3,oneof" json:"fax2_email_address,omitempty" msg:"3296331,omitempty"`
 	// Contains the same value as the PidTagNormalizedSubject property (section 2.812).
-	Fax2OriginalDisplayName *string `protobuf:"bytes,51,opt,name=fax2_original_display_name,json=fax2OriginalDisplayName,proto3,oneof" json:"fax2_original_display_name,omitempty" msg:"3296431,omitempty"`  
+	Fax2OriginalDisplayName *string `protobuf:"bytes,51,opt,name=fax2_original_display_name,json=fax2OriginalDisplayName,proto3,oneof" json:"fax2_original_display_name,omitempty" msg:"3296431,omitempty"`
 	// Specifies a one-off EntryID corresponding to this fax address.
-	Fax2OriginalEntryId []byte `protobuf:"bytes,52,opt,name=fax2_original_entry_id,json=fax2OriginalEntryId,proto3,oneof" json:"fax2_original_entry_id,omitempty" msg:"32965258,omitempty"`  
+	Fax2OriginalEntryId []byte `protobuf:"bytes,52,opt,name=fax2_original_entry_id,json=fax2OriginalEntryId,proto3,oneof" json:"fax2_original_entry_id,omitempty" msg:"32965258,omitempty"`
 	// Contains the string value "FAX".
-	Fax3AddressType *string `protobuf:"bytes,53,opt,name=fax3_address_type,json=fax3AddressType,proto3,oneof" json:"fax3_address_type,omitempty" msg:"3297831,omitempty"`  
+	Fax3AddressType *string `protobuf:"bytes,53,opt,name=fax3_address_type,json=fax3AddressType,proto3,oneof" json:"fax3_address_type,omitempty" msg:"3297831,omitempty"`
 	// Contains a user-readable display name, followed by the "@" character, followed by a fax number.
-	Fax3EmailAddress *string `protobuf:"bytes,54,opt,name=fax3_email_address,json=fax3EmailAddress,proto3,oneof" json:"fax3_email_address,omitempty" msg:"3297931,omitempty"`  
+	Fax3EmailAddress *string `protobuf:"bytes,54,opt,name=fax3_email_address,json=fax3EmailAddress,proto3,oneof" json:"fax3_email_address,omitempty" msg:"3297931,omitempty"`
 	// Contains the same value as the PidTagNormalizedSubject property (section 2.812).
-	Fax3OriginalDisplayName *string `protobuf:"bytes,55,opt,name=fax3_original_display_name,json=fax3OriginalDisplayName,proto3,oneof" json:"fax3_original_display_name,omitempty" msg:"3298031,omitempty"`  
+	Fax3OriginalDisplayName *string `protobuf:"bytes,55,opt,name=fax3_original_display_name,json=fax3OriginalDisplayName,proto3,oneof" json:"fax3_original_display_name,omitempty" msg:"3298031,omitempty"`
 	// Specifies a one-off EntryID that corresponds to this fax address.
-	Fax3OriginalEntryId []byte `protobuf:"bytes,56,opt,name=fax3_original_entry_id,json=fax3OriginalEntryId,proto3,oneof" json:"fax3_original_entry_id,omitempty" msg:"32981258,omitempty"`  
+	Fax3OriginalEntryId []byte `protobuf:"bytes,56,opt,name=fax3_original_entry_id,json=fax3OriginalEntryId,proto3,oneof" json:"fax3_original_entry_id,omitempty" msg:"32981258,omitempty"`
 	// Specifies the name under which to file a contact when displaying a list of contacts.
-	FileUnder *string `protobuf:"bytes,57,opt,name=file_under,json=fileUnder,proto3,oneof" json:"file_under,omitempty" msg:"3277331,omitempty"`  
+	FileUnder *string `protobuf:"bytes,57,opt,name=file_under,json=fileUnder,proto3,oneof" json:"file_under,omitempty" msg:"3277331,omitempty"`
 	// Specifies how to generate and recompute the value of the PidLidFileUnder property (section 2.132) when other contact name properties change.
-	FileUnderId *int32 `protobuf:"varint,58,opt,name=file_under_id,json=fileUnderId,proto3,oneof" json:"file_under_id,omitempty" msg:"327743,omitempty"`  
+	FileUnderId *int32 `protobuf:"varint,58,opt,name=file_under_id,json=fileUnderId,proto3,oneof" json:"file_under_id,omitempty" msg:"327743,omitempty"`
 	// Specifies a URL path from which a client can retrieve free/busy status information for the contact.
-	FreeBusyLocation *string `protobuf:"bytes,60,opt,name=free_busy_location,json=freeBusyLocation,proto3,oneof" json:"free_busy_location,omitempty" msg:"3298431,omitempty"`  
+	FreeBusyLocation *string `protobuf:"bytes,60,opt,name=free_busy_location,json=freeBusyLocation,proto3,oneof" json:"free_busy_location,omitempty" msg:"3298431,omitempty"`
 	// Specifies whether the attachment has a picture.
-	HasPicture *bool `protobuf:"varint,61,opt,name=has_picture,json=hasPicture,proto3,oneof" json:"has_picture,omitempty" msg:"3278911,omitempty"`  
+	HasPicture *bool `protobuf:"varint,61,opt,name=has_picture,json=hasPicture,proto3,oneof" json:"has_picture,omitempty" msg:"3278911,omitempty"`
 	// Specifies the complete address of the home address of the contact.
-	HomeAddress *string `protobuf:"bytes,62,opt,name=home_address,json=homeAddress,proto3,oneof" json:"home_address,omitempty" msg:"3279431,omitempty"`  
+	HomeAddress *string `protobuf:"bytes,62,opt,name=home_address,json=homeAddress,proto3,oneof" json:"home_address,omitempty" msg:"3279431,omitempty"`
 	// Specifies the country code portion of the home address of the contact.
-	HomeAddressCountryCode *string `protobuf:"bytes,63,opt,name=home_address_country_code,json=homeAddressCountryCode,proto3,oneof" json:"home_address_country_code,omitempty" msg:"3298631,omitempty"`  
+	HomeAddressCountryCode *string `protobuf:"bytes,63,opt,name=home_address_country_code,json=homeAddressCountryCode,proto3,oneof" json:"home_address_country_code,omitempty" msg:"3298631,omitempty"`
 	// Specifies the business webpage URL of the contact.
-	Html *string `protobuf:"bytes,64,opt,name=html,proto3,oneof" json:"html,omitempty" msg:"3281131,omitempty"`  
+	Html *string `protobuf:"bytes,64,opt,name=html,proto3,oneof" json:"html,omitempty" msg:"3281131,omitempty"`
 	// Specifies the instant messaging address of the contact.
-	InstantMessagingAddress *string `protobuf:"bytes,65,opt,name=instant_messaging_address,json=instantMessagingAddress,proto3,oneof" json:"instant_messaging_address,omitempty" msg:"3286631,omitempty"`  
+	InstantMessagingAddress *string `protobuf:"bytes,65,opt,name=instant_messaging_address,json=instantMessagingAddress,proto3,oneof" json:"instant_messaging_address,omitempty" msg:"3286631,omitempty"`
 	// Specifies whether the contact is linked to other contacts.
-	IsContactLinked *bool `protobuf:"varint,66,opt,name=is_contact_linked,json=isContactLinked,proto3,oneof" json:"is_contact_linked,omitempty" msg:"3299211,omitempty"`  
+	IsContactLinked *bool `protobuf:"varint,66,opt,name=is_contact_linked,json=isContactLinked,proto3,oneof" json:"is_contact_linked,omitempty" msg:"3299211,omitempty"`
 	// Specifies the complete address of the other address of the contact.
-	OtherAddress *string `protobuf:"bytes,67,opt,name=other_address,json=otherAddress,proto3,oneof" json:"other_address,omitempty" msg:"3279631,omitempty"`  
+	OtherAddress *string `protobuf:"bytes,67,opt,name=other_address,json=otherAddress,proto3,oneof" json:"other_address,omitempty" msg:"3279631,omitempty"`
 	// Specifies the country code portion of the other address of the contact.
-	OtherAddressCountryCode *string `protobuf:"bytes,68,opt,name=other_address_country_code,json=otherAddressCountryCode,proto3,oneof" json:"other_address_country_code,omitempty" msg:"3298831,omitempty"`  
+	OtherAddressCountryCode *string `protobuf:"bytes,68,opt,name=other_address_country_code,json=otherAddressCountryCode,proto3,oneof" json:"other_address_country_code,omitempty" msg:"3298831,omitempty"`
 	// Specifies which physical address is the mailing address for this contact.
-	PostalAddressId *int32 `protobuf:"varint,69,opt,name=postal_address_id,json=postalAddressId,proto3,oneof" json:"postal_address_id,omitempty" msg:"328023,omitempty"`  
+	PostalAddressId *int32 `protobuf:"varint,69,opt,name=postal_address_id,json=postalAddressId,proto3,oneof" json:"postal_address_id,omitempty" msg:"328023,omitempty"`
 	// Specifies the value of the EntryID of the Contact object unless the Contact object is a copy of an earlier original.
-	ReferenceEntryId []byte `protobuf:"bytes,70,opt,name=reference_entry_id,json=referenceEntryId,proto3,oneof" json:"reference_entry_id,omitempty" msg:"34237258,omitempty"`  
+	ReferenceEntryId []byte `protobuf:"bytes,70,opt,name=reference_entry_id,json=referenceEntryId,proto3,oneof" json:"reference_entry_id,omitempty" msg:"34237258,omitempty"`
 	// Specifies the wedding anniversary of the contact, at midnight in the client's local time zone, and is saved without any time zone conversions.
-	WeddingAnniversaryLocal *int64 `protobuf:"varint,71,opt,name=wedding_anniversary_local,json=weddingAnniversaryLocal,proto3,oneof" json:"wedding_anniversary_local,omitempty" msg:"3299164,omitempty"`  
+	WeddingAnniversaryLocal *int64 `protobuf:"varint,71,opt,name=wedding_anniversary_local,json=weddingAnniversaryLocal,proto3,oneof" json:"wedding_anniversary_local,omitempty" msg:"3299164,omitempty"`
 	// Specifies the complete address of the work address of the contact.
-	WorkAddress *string `protobuf:"bytes,72,opt,name=work_address,json=workAddress,proto3,oneof" json:"work_address,omitempty" msg:"3279531,omitempty"`  
+	WorkAddress *string `protobuf:"bytes,72,opt,name=work_address,json=workAddress,proto3,oneof" json:"work_address,omitempty" msg:"3279531,omitempty"`
 	// Specifies the city or locality portion of the work address of the contact.
-	WorkAddressCity *string `protobuf:"bytes,73,opt,name=work_address_city,json=workAddressCity,proto3,oneof" json:"work_address_city,omitempty" msg:"3283831,omitempty"`  
+	WorkAddressCity *string `protobuf:"bytes,73,opt,name=work_address_city,json=workAddressCity,proto3,oneof" json:"work_address_city,omitempty" msg:"3283831,omitempty"`
 	// Specifies the country or region portion of the work address of the contact.
-	WorkAddressCountry *string `protobuf:"bytes,74,opt,name=work_address_country,json=workAddressCountry,proto3,oneof" json:"work_address_country,omitempty" msg:"3284131,omitempty"`  
+	WorkAddressCountry *string `protobuf:"bytes,74,opt,name=work_address_country,json=workAddressCountry,proto3,oneof" json:"work_address_country,omitempty" msg:"3284131,omitempty"`
 	// Specifies the country code portion of the work address of the contact.
-	WorkAddressCountryCode *string `protobuf:"bytes,75,opt,name=work_address_country_code,json=workAddressCountryCode,proto3,oneof" json:"work_address_country_code,omitempty" msg:"3298731,omitempty"`  
+	WorkAddressCountryCode *string `protobuf:"bytes,75,opt,name=work_address_country_code,json=workAddressCountryCode,proto3,oneof" json:"work_address_country_code,omitempty" msg:"3298731,omitempty"`
 	// Specifies the postal code (ZIP code) portion of the work address of the contact.
-	WorkAddressPostalCode *string `protobuf:"bytes,76,opt,name=work_address_postal_code,json=workAddressPostalCode,proto3,oneof" json:"work_address_postal_code,omitempty" msg:"3284031,omitempty"`  
+	WorkAddressPostalCode *string `protobuf:"bytes,76,opt,name=work_address_postal_code,json=workAddressPostalCode,proto3,oneof" json:"work_address_postal_code,omitempty" msg:"3284031,omitempty"`
 	// Specifies the post office box portion of the work address of the contact.
-	WorkAddressPostOfficeBox *string `protobuf:"bytes,77,opt,name=work_address_post_office_box,json=workAddressPostOfficeBox,proto3,oneof" json:"work_address_post_office_box,omitempty" msg:"3284231,omitempty"`  
+	WorkAddressPostOfficeBox *string `protobuf:"bytes,77,opt,name=work_address_post_office_box,json=workAddressPostOfficeBox,proto3,oneof" json:"work_address_post_office_box,omitempty" msg:"3284231,omitempty"`
 	// Specifies the state or province portion of the work address of the contact.
-	WorkAddressState *string `protobuf:"bytes,78,opt,name=work_address_state,json=workAddressState,proto3,oneof" json:"work_address_state,omitempty" msg:"3283931,omitempty"`  
+	WorkAddressState *string `protobuf:"bytes,78,opt,name=work_address_state,json=workAddressState,proto3,oneof" json:"work_address_state,omitempty" msg:"3283931,omitempty"`
 	// Specifies the street portion of the work address of the contact.
-	WorkAddressStreet *string `protobuf:"bytes,79,opt,name=work_address_street,json=workAddressStreet,proto3,oneof" json:"work_address_street,omitempty" msg:"3283731,omitempty"`  
+	WorkAddressStreet *string `protobuf:"bytes,79,opt,name=work_address_street,json=workAddressStreet,proto3,oneof" json:"work_address_street,omitempty" msg:"3283731,omitempty"`
 	// Specifies the phonetic pronunciation of the company name of the contact.
-	YomiCompanyName *string `protobuf:"bytes,80,opt,name=yomi_company_name,json=yomiCompanyName,proto3,oneof" json:"yomi_company_name,omitempty" msg:"3281431,omitempty"`  
+	YomiCompanyName *string `protobuf:"bytes,80,opt,name=yomi_company_name,json=yomiCompanyName,proto3,oneof" json:"yomi_company_name,omitempty" msg:"3281431,omitempty"`
 	// Specifies the phonetic pronunciation of the given name of the contact.
-	YomiFirstName *string `protobuf:"bytes,81,opt,name=yomi_first_name,json=yomiFirstName,proto3,oneof" json:"yomi_first_name,omitempty" msg:"3281231,omitempty"`  
+	YomiFirstName *string `protobuf:"bytes,81,opt,name=yomi_first_name,json=yomiFirstName,proto3,oneof" json:"yomi_first_name,omitempty" msg:"3281231,omitempty"`
 	// Specifies the phonetic pronunciation of the surname of the contact.
-	YomiLastName *string `protobuf:"bytes,82,opt,name=yomi_last_name,json=yomiLastName,proto3,oneof" json:"yomi_last_name,omitempty" msg:"3281331,omitempty"`  
+	YomiLastName *string `protobuf:"bytes,82,opt,name=yomi_last_name,json=yomiLastName,proto3,oneof" json:"yomi_last_name,omitempty" msg:"3281331,omitempty"`
 	// Indicates the name of the contact associated with the birthday event.
 	BirthdayContactAttributionDisplayName *string `protobuf:"bytes,83,opt,name=birthday_contact_attribution_display_name,json=birthdayContactAttributionDisplayName,proto3,oneof" json:"birthday_contact_attribution_display_name,omitempty"`
 	// Indicate the EntryID of the contact associated with the birthday event.
@@ -202,101 +202,101 @@ type Contact struct {
 	// Indicates whether the contact associated with the birthday event is writable.
 	IsBirthdayContactWritable *bool `protobuf:"varint,86,opt,name=is_birthday_contact_writable,json=isBirthdayContactWritable,proto3,oneof" json:"is_birthday_contact_writable,omitempty"`
 	// Contains the date of the mail user's birthday at midnight.
-	Birthday *int64 `protobuf:"varint,87,opt,name=birthday,proto3,oneof" json:"birthday,omitempty" msg:"1491464,omitempty"`  
+	Birthday *int64 `protobuf:"varint,87,opt,name=birthday,proto3,oneof" json:"birthday,omitempty" msg:"1491464,omitempty"`
 	// Contains a secondary telephone number at the mail user's place of business.
-	Business2TelephoneNumber *string `protobuf:"bytes,88,opt,name=business2_telephone_number,json=business2TelephoneNumber,proto3,oneof" json:"business2_telephone_number,omitempty" msg:"1487531,omitempty"`  
+	Business2TelephoneNumber *string `protobuf:"bytes,88,opt,name=business2_telephone_number,json=business2TelephoneNumber,proto3,oneof" json:"business2_telephone_number,omitempty" msg:"1487531,omitempty"`
 	// Contains the telephone number of the mail user's business fax machine.
-	BusinessFaxNumber *string `protobuf:"bytes,90,opt,name=business_fax_number,json=businessFaxNumber,proto3,oneof" json:"business_fax_number,omitempty" msg:"1488431,omitempty"`  
+	BusinessFaxNumber *string `protobuf:"bytes,90,opt,name=business_fax_number,json=businessFaxNumber,proto3,oneof" json:"business_fax_number,omitempty" msg:"1488431,omitempty"`
 	// Contains the URL of the mail user's business home page.
-	BusinessHomePage *string `protobuf:"bytes,91,opt,name=business_home_page,json=businessHomePage,proto3,oneof" json:"business_home_page,omitempty" msg:"1492931,omitempty"`  
+	BusinessHomePage *string `protobuf:"bytes,91,opt,name=business_home_page,json=businessHomePage,proto3,oneof" json:"business_home_page,omitempty" msg:"1492931,omitempty"`
 	// Contains the primary telephone number of the mail user's place of business.
-	BusinessTelephoneNumber *string `protobuf:"bytes,92,opt,name=business_telephone_number,json=businessTelephoneNumber,proto3,oneof" json:"business_telephone_number,omitempty" msg:"1485631,omitempty"`  
+	BusinessTelephoneNumber *string `protobuf:"bytes,92,opt,name=business_telephone_number,json=businessTelephoneNumber,proto3,oneof" json:"business_telephone_number,omitempty" msg:"1485631,omitempty"`
 	// Contains a telephone number to reach the mail user.
-	CallbackTelephoneNumber *string `protobuf:"bytes,93,opt,name=callback_telephone_number,json=callbackTelephoneNumber,proto3,oneof" json:"callback_telephone_number,omitempty" msg:"1485031,omitempty"`  
+	CallbackTelephoneNumber *string `protobuf:"bytes,93,opt,name=callback_telephone_number,json=callbackTelephoneNumber,proto3,oneof" json:"callback_telephone_number,omitempty" msg:"1485031,omitempty"`
 	// Contains the mail user's car telephone number.
-	CarTelephoneNumber *string `protobuf:"bytes,94,opt,name=car_telephone_number,json=carTelephoneNumber,proto3,oneof" json:"car_telephone_number,omitempty" msg:"1487831,omitempty"`  
+	CarTelephoneNumber *string `protobuf:"bytes,94,opt,name=car_telephone_number,json=carTelephoneNumber,proto3,oneof" json:"car_telephone_number,omitempty" msg:"1487831,omitempty"`
 	// Contains the main telephone number of the mail user's company.
-	CompanyMainTelephoneNumber *string `protobuf:"bytes,96,opt,name=company_main_telephone_number,json=companyMainTelephoneNumber,proto3,oneof" json:"company_main_telephone_number,omitempty" msg:"1493531,omitempty"`  
+	CompanyMainTelephoneNumber *string `protobuf:"bytes,96,opt,name=company_main_telephone_number,json=companyMainTelephoneNumber,proto3,oneof" json:"company_main_telephone_number,omitempty" msg:"1493531,omitempty"`
 	// Contains the mail user's company name.
-	CompanyName *string `protobuf:"bytes,97,opt,name=company_name,json=companyName,proto3,oneof" json:"company_name,omitempty" msg:"1487031,omitempty"`  
+	CompanyName *string `protobuf:"bytes,97,opt,name=company_name,json=companyName,proto3,oneof" json:"company_name,omitempty" msg:"1487031,omitempty"`
 	// Contains the name of the mail user's computer network.
-	ComputerNetworkName *string `protobuf:"bytes,98,opt,name=computer_network_name,json=computerNetworkName,proto3,oneof" json:"computer_network_name,omitempty" msg:"1492131,omitempty"`  
+	ComputerNetworkName *string `protobuf:"bytes,98,opt,name=computer_network_name,json=computerNetworkName,proto3,oneof" json:"computer_network_name,omitempty" msg:"1492131,omitempty"`
 	// Contains the name of the mail user's country/region.
-	Country *string `protobuf:"bytes,99,opt,name=country,proto3,oneof" json:"country,omitempty" msg:"1488631,omitempty"`  
+	Country *string `protobuf:"bytes,99,opt,name=country,proto3,oneof" json:"country,omitempty" msg:"1488631,omitempty"`
 	// Contains the mail user's customer identification number.
-	CustomerId *string `protobuf:"bytes,100,opt,name=customer_id,json=customerId,proto3,oneof" json:"customer_id,omitempty" msg:"1492231,omitempty"`  
+	CustomerId *string `protobuf:"bytes,100,opt,name=customer_id,json=customerId,proto3,oneof" json:"customer_id,omitempty" msg:"1492231,omitempty"`
 	// Contains a name for the department in which the mail user works.
-	DepartmentName *string `protobuf:"bytes,101,opt,name=department_name,json=departmentName,proto3,oneof" json:"department_name,omitempty" msg:"1487231,omitempty"`  
+	DepartmentName *string `protobuf:"bytes,101,opt,name=department_name,json=departmentName,proto3,oneof" json:"department_name,omitempty" msg:"1487231,omitempty"`
 	// Contains the mail user's honorific title.
-	DisplayNamePrefix *string `protobuf:"bytes,102,opt,name=display_name_prefix,json=displayNamePrefix,proto3,oneof" json:"display_name_prefix,omitempty" msg:"1491731,omitempty"`  
+	DisplayNamePrefix *string `protobuf:"bytes,102,opt,name=display_name_prefix,json=displayNamePrefix,proto3,oneof" json:"display_name_prefix,omitempty" msg:"1491731,omitempty"`
 	// Contains the File Transfer Protocol (FTP) site address of the mail user.
-	FtpSite *string `protobuf:"bytes,103,opt,name=ftp_site,json=ftpSite,proto3,oneof" json:"ftp_site,omitempty" msg:"1492431,omitempty"`  
+	FtpSite *string `protobuf:"bytes,103,opt,name=ftp_site,json=ftpSite,proto3,oneof" json:"ftp_site,omitempty" msg:"1492431,omitempty"`
 	// Contains a value that represents the mail user's gender.
-	Gender *int32 `protobuf:"varint,104,opt,name=gender,proto3,oneof" json:"gender,omitempty" msg:"149252,omitempty"`  
+	Gender *int32 `protobuf:"varint,104,opt,name=gender,proto3,oneof" json:"gender,omitempty" msg:"149252,omitempty"`
 	// Contains a generational abbreviation that follows the full name of the mail user.
-	Generation *string `protobuf:"bytes,105,opt,name=generation,proto3,oneof" json:"generation,omitempty" msg:"1485331,omitempty"`  
+	Generation *string `protobuf:"bytes,105,opt,name=generation,proto3,oneof" json:"generation,omitempty" msg:"1485331,omitempty"`
 	// Contains the mail user's given name.
-	GivenName *string `protobuf:"bytes,106,opt,name=given_name,json=givenName,proto3,oneof" json:"given_name,omitempty" msg:"1485431,omitempty"`  
+	GivenName *string `protobuf:"bytes,106,opt,name=given_name,json=givenName,proto3,oneof" json:"given_name,omitempty" msg:"1485431,omitempty"`
 	// Contains a government identifier for the mail user.
-	GovernmentIdNumber *string `protobuf:"bytes,107,opt,name=government_id_number,json=governmentIdNumber,proto3,oneof" json:"government_id_number,omitempty" msg:"1485531,omitempty"`  
+	GovernmentIdNumber *string `protobuf:"bytes,107,opt,name=government_id_number,json=governmentIdNumber,proto3,oneof" json:"government_id_number,omitempty" msg:"1485531,omitempty"`
 	// Contains the names of the mail user's hobbies.
-	Hobbies *string `protobuf:"bytes,108,opt,name=hobbies,proto3,oneof" json:"hobbies,omitempty" msg:"1491531,omitempty"`  
+	Hobbies *string `protobuf:"bytes,108,opt,name=hobbies,proto3,oneof" json:"hobbies,omitempty" msg:"1491531,omitempty"`
 	// Contains a secondary telephone number at the mail user's home.
-	Home2TelephoneNumber *string `protobuf:"bytes,109,opt,name=home2_telephone_number,json=home2TelephoneNumber,proto3,oneof" json:"home2_telephone_number,omitempty" msg:"1489531,omitempty"`  
+	Home2TelephoneNumber *string `protobuf:"bytes,109,opt,name=home2_telephone_number,json=home2TelephoneNumber,proto3,oneof" json:"home2_telephone_number,omitempty" msg:"1489531,omitempty"`
 	// Contains the name of the mail user's home locality, such as the town or city.
-	HomeAddressCity *string `protobuf:"bytes,111,opt,name=home_address_city,json=homeAddressCity,proto3,oneof" json:"home_address_city,omitempty" msg:"1493731,omitempty"`  
+	HomeAddressCity *string `protobuf:"bytes,111,opt,name=home_address_city,json=homeAddressCity,proto3,oneof" json:"home_address_city,omitempty" msg:"1493731,omitempty"`
 	// Contains the name of the mail user's home country/region.
-	HomeAddressCountry *string `protobuf:"bytes,112,opt,name=home_address_country,json=homeAddressCountry,proto3,oneof" json:"home_address_country,omitempty" msg:"1493831,omitempty"`  
+	HomeAddressCountry *string `protobuf:"bytes,112,opt,name=home_address_country,json=homeAddressCountry,proto3,oneof" json:"home_address_country,omitempty" msg:"1493831,omitempty"`
 	// Contains the postal code for the mail user's home postal address.
-	HomeAddressPostalCode *string `protobuf:"bytes,113,opt,name=home_address_postal_code,json=homeAddressPostalCode,proto3,oneof" json:"home_address_postal_code,omitempty" msg:"1493931,omitempty"`  
+	HomeAddressPostalCode *string `protobuf:"bytes,113,opt,name=home_address_postal_code,json=homeAddressPostalCode,proto3,oneof" json:"home_address_postal_code,omitempty" msg:"1493931,omitempty"`
 	// Contains the number or identifier of the mail user's home post office box.
-	HomeAddressPostOfficeBox *string `protobuf:"bytes,114,opt,name=home_address_post_office_box,json=homeAddressPostOfficeBox,proto3,oneof" json:"home_address_post_office_box,omitempty" msg:"1494231,omitempty"`  
+	HomeAddressPostOfficeBox *string `protobuf:"bytes,114,opt,name=home_address_post_office_box,json=homeAddressPostOfficeBox,proto3,oneof" json:"home_address_post_office_box,omitempty" msg:"1494231,omitempty"`
 	// Contains the name of the mail user's home state or province.
-	HomeAddressStateOrProvince *string `protobuf:"bytes,115,opt,name=home_address_state_or_province,json=homeAddressStateOrProvince,proto3,oneof" json:"home_address_state_or_province,omitempty" msg:"1494031,omitempty"`  
+	HomeAddressStateOrProvince *string `protobuf:"bytes,115,opt,name=home_address_state_or_province,json=homeAddressStateOrProvince,proto3,oneof" json:"home_address_state_or_province,omitempty" msg:"1494031,omitempty"`
 	// Contains the mail user's home street address.
-	HomeAddressStreet *string `protobuf:"bytes,116,opt,name=home_address_street,json=homeAddressStreet,proto3,oneof" json:"home_address_street,omitempty" msg:"1494131,omitempty"`  
+	HomeAddressStreet *string `protobuf:"bytes,116,opt,name=home_address_street,json=homeAddressStreet,proto3,oneof" json:"home_address_street,omitempty" msg:"1494131,omitempty"`
 	// Contains the telephone number of the mail user's home fax machine.
-	HomeFaxNumber *string `protobuf:"bytes,117,opt,name=home_fax_number,json=homeFaxNumber,proto3,oneof" json:"home_fax_number,omitempty" msg:"1488531,omitempty"`  
+	HomeFaxNumber *string `protobuf:"bytes,117,opt,name=home_fax_number,json=homeFaxNumber,proto3,oneof" json:"home_fax_number,omitempty" msg:"1488531,omitempty"`
 	// Contains the primary telephone number of the mail user's home.
-	HomeTelephoneNumber *string `protobuf:"bytes,118,opt,name=home_telephone_number,json=homeTelephoneNumber,proto3,oneof" json:"home_telephone_number,omitempty" msg:"1485731,omitempty"`  
+	HomeTelephoneNumber *string `protobuf:"bytes,118,opt,name=home_telephone_number,json=homeTelephoneNumber,proto3,oneof" json:"home_telephone_number,omitempty" msg:"1485731,omitempty"`
 	// Specifies whether contact synchronization with an external source is handled by the server.
-	OscSyncEnabled *bool `protobuf:"varint,119,opt,name=osc_sync_enabled,json=oscSyncEnabled,proto3,oneof" json:"osc_sync_enabled,omitempty" msg:"3178011,omitempty"`  
+	OscSyncEnabled *bool `protobuf:"varint,119,opt,name=osc_sync_enabled,json=oscSyncEnabled,proto3,oneof" json:"osc_sync_enabled,omitempty" msg:"3178011,omitempty"`
 	// Contains the URL of the mail user's personal home page.
-	PersonalHomePage *string `protobuf:"bytes,120,opt,name=personal_home_page,json=personalHomePage,proto3,oneof" json:"personal_home_page,omitempty" msg:"1492831,omitempty"`  
+	PersonalHomePage *string `protobuf:"bytes,120,opt,name=personal_home_page,json=personalHomePage,proto3,oneof" json:"personal_home_page,omitempty" msg:"1492831,omitempty"`
 	// Contains the mail user's postal address.
-	PostalAddress *string `protobuf:"bytes,121,opt,name=postal_address,json=postalAddress,proto3,oneof" json:"postal_address,omitempty" msg:"1486931,omitempty"`  
+	PostalAddress *string `protobuf:"bytes,121,opt,name=postal_address,json=postalAddress,proto3,oneof" json:"postal_address,omitempty" msg:"1486931,omitempty"`
 	// Contains the postal code for the mail user's postal address.
-	PostalCode *string `protobuf:"bytes,122,opt,name=postal_code,json=postalCode,proto3,oneof" json:"postal_code,omitempty" msg:"1489031,omitempty"`  
+	PostalCode *string `protobuf:"bytes,122,opt,name=postal_code,json=postalCode,proto3,oneof" json:"postal_code,omitempty" msg:"1489031,omitempty"`
 	// Contains the number or identifier of the mail user's post office box.
-	PostOfficeBox *string `protobuf:"bytes,123,opt,name=post_office_box,json=postOfficeBox,proto3,oneof" json:"post_office_box,omitempty" msg:"1489131,omitempty"`  
+	PostOfficeBox *string `protobuf:"bytes,123,opt,name=post_office_box,json=postOfficeBox,proto3,oneof" json:"post_office_box,omitempty" msg:"1489131,omitempty"`
 	// Contains the telephone number of the mail user's primary fax machine.
-	PrimaryFaxNumber *string `protobuf:"bytes,124,opt,name=primary_fax_number,json=primaryFaxNumber,proto3,oneof" json:"primary_fax_number,omitempty" msg:"1488331,omitempty"`  
+	PrimaryFaxNumber *string `protobuf:"bytes,124,opt,name=primary_fax_number,json=primaryFaxNumber,proto3,oneof" json:"primary_fax_number,omitempty" msg:"1488331,omitempty"`
 	// Contains the mail user's primary telephone number.
-	PrimaryTelephoneNumber *string `protobuf:"bytes,125,opt,name=primary_telephone_number,json=primaryTelephoneNumber,proto3,oneof" json:"primary_telephone_number,omitempty" msg:"1487431,omitempty"`  
+	PrimaryTelephoneNumber *string `protobuf:"bytes,125,opt,name=primary_telephone_number,json=primaryTelephoneNumber,proto3,oneof" json:"primary_telephone_number,omitempty" msg:"1487431,omitempty"`
 	// Contains the name of the mail user's line of business.
-	Profession *string `protobuf:"bytes,126,opt,name=profession,proto3,oneof" json:"profession,omitempty" msg:"1491831,omitempty"`  
+	Profession *string `protobuf:"bytes,126,opt,name=profession,proto3,oneof" json:"profession,omitempty" msg:"1491831,omitempty"`
 	// Contains the mail user's radio telephone number.
-	RadioTelephoneNumber *string `protobuf:"bytes,127,opt,name=radio_telephone_number,json=radioTelephoneNumber,proto3,oneof" json:"radio_telephone_number,omitempty" msg:"1487731,omitempty"`  
+	RadioTelephoneNumber *string `protobuf:"bytes,127,opt,name=radio_telephone_number,json=radioTelephoneNumber,proto3,oneof" json:"radio_telephone_number,omitempty" msg:"1487731,omitempty"`
 	// Contains the name of the mail user's referral.
-	ReferredByName *string `protobuf:"bytes,128,opt,name=referred_by_name,json=referredByName,proto3,oneof" json:"referred_by_name,omitempty" msg:"1491931,omitempty"`  
+	ReferredByName *string `protobuf:"bytes,128,opt,name=referred_by_name,json=referredByName,proto3,oneof" json:"referred_by_name,omitempty" msg:"1491931,omitempty"`
 	// Contains the name of the mail user's spouse/partner.
-	SpouseName *string `protobuf:"bytes,129,opt,name=spouse_name,json=spouseName,proto3,oneof" json:"spouse_name,omitempty" msg:"1492031,omitempty"`  
+	SpouseName *string `protobuf:"bytes,129,opt,name=spouse_name,json=spouseName,proto3,oneof" json:"spouse_name,omitempty" msg:"1492031,omitempty"`
 	// Contains the name of the mail user's state or province.
-	StateOrProvince *string `protobuf:"bytes,130,opt,name=state_or_province,json=stateOrProvince,proto3,oneof" json:"state_or_province,omitempty" msg:"1488831,omitempty"`  
+	StateOrProvince *string `protobuf:"bytes,130,opt,name=state_or_province,json=stateOrProvince,proto3,oneof" json:"state_or_province,omitempty" msg:"1488831,omitempty"`
 	// Contains the mail user's street address.
-	StreetAddress *string `protobuf:"bytes,131,opt,name=street_address,json=streetAddress,proto3,oneof" json:"street_address,omitempty" msg:"1488931,omitempty"`  
+	StreetAddress *string `protobuf:"bytes,131,opt,name=street_address,json=streetAddress,proto3,oneof" json:"street_address,omitempty" msg:"1488931,omitempty"`
 	// Contains the mail user's family name.
-	Surname *string `protobuf:"bytes,132,opt,name=surname,proto3,oneof" json:"surname,omitempty" msg:"1486531,omitempty"`  
+	Surname *string `protobuf:"bytes,132,opt,name=surname,proto3,oneof" json:"surname,omitempty" msg:"1486531,omitempty"`
 	// Contains the mail user's telecommunication device for the deaf (TTY/TDD) telephone number.
-	TelecommunicationsDeviceForDeafTelephoneNumber *string `protobuf:"bytes,133,opt,name=telecommunications_device_for_deaf_telephone_number,json=telecommunicationsDeviceForDeafTelephoneNumber,proto3,oneof" json:"telecommunications_device_for_deaf_telephone_number,omitempty" msg:"1492331,omitempty"`  
+	TelecommunicationsDeviceForDeafTelephoneNumber *string `protobuf:"bytes,133,opt,name=telecommunications_device_for_deaf_telephone_number,json=telecommunicationsDeviceForDeafTelephoneNumber,proto3,oneof" json:"telecommunications_device_for_deaf_telephone_number,omitempty" msg:"1492331,omitempty"`
 	// Contains the mail user's telex number. This property is returned from an NSPI server as a PtypMultipleBinary. Otherwise, the data type is PtypString.
-	TelexNumber *string `protobuf:"bytes,134,opt,name=telex_number,json=telexNumber,proto3,oneof" json:"telex_number,omitempty" msg:"1489231,omitempty"`  
+	TelexNumber *string `protobuf:"bytes,134,opt,name=telex_number,json=telexNumber,proto3,oneof" json:"telex_number,omitempty" msg:"1489231,omitempty"`
 	// Contains the mail user's job title.
-	Title *string `protobuf:"bytes,135,opt,name=title,proto3,oneof" json:"title,omitempty" msg:"1487131,omitempty"`  
+	Title *string `protobuf:"bytes,135,opt,name=title,proto3,oneof" json:"title,omitempty" msg:"1487131,omitempty"`
 	// Contains an ASN.1 authentication certificate for a messaging user.
-	UserCertificate []byte `protobuf:"bytes,136,opt,name=user_certificate,json=userCertificate,proto3,oneof" json:"user_certificate,omitempty" msg:"14882258,omitempty"`  
+	UserCertificate []byte `protobuf:"bytes,136,opt,name=user_certificate,json=userCertificate,proto3,oneof" json:"user_certificate,omitempty" msg:"14882258,omitempty"`
 	// Contains the date of the mail user's wedding anniversary.
-	WeddingAnniversary *int64 `protobuf:"varint,138,opt,name=wedding_anniversary,json=weddingAnniversary,proto3,oneof" json:"wedding_anniversary,omitempty" msg:"1491364,omitempty"`  
+	WeddingAnniversary *int64 `protobuf:"varint,138,opt,name=wedding_anniversary,json=weddingAnniversary,proto3,oneof" json:"wedding_anniversary,omitempty" msg:"1491364,omitempty"`
 }
 
 func (x *Contact) Reset() {

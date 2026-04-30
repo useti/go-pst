@@ -61,3 +61,35 @@ func (file *File) GetBTreeOnHeapHeader(heapOnNode *HeapOnNode) (*BTreeOnHeapHead
 		HIDRoot:   Identifier(binary.LittleEndian.Uint32(btreeOnHeap[4:])),
 	}, nil
 }
+
+// GetBTreeOnHeapHeaderWithLocalDescriptors returns the B-Tree-on-Heap header,
+// using local descriptors for external node resolution. This is useful for recovery
+// when data may be stored in local descriptor nodes.
+func (file *File) GetBTreeOnHeapHeaderWithLocalDescriptors(heapOnNode *HeapOnNode, localDescriptors []LocalDescriptor) (*BTreeOnHeapHeader, error) {
+	// All tables should have a BTree-on-Heap header at HID 0x20 (HID User Root from the Heap-on-Node header).
+	hidUserRoot, err := heapOnNode.GetHIDUserRoot()
+
+	if err != nil {
+		return nil, eris.Wrap(err, "failed to get HID user root")
+	}
+
+	btreeOnHeapReader, err := file.GetHeapOnNodeReaderFromHNID(hidUserRoot, *heapOnNode.Reader, localDescriptors...)
+
+	if err != nil {
+		return nil, eris.Wrap(err, "failed to get Heap-on-Node reader from HNID")
+	}
+
+	btreeOnHeap := make([]byte, 8)
+
+	if _, err := btreeOnHeapReader.ReadAt(btreeOnHeap, 0); err != nil {
+		return nil, eris.Wrap(err, "failed to read b-tree-on-heap")
+	}
+
+	return &BTreeOnHeapHeader{
+		TableType: btreeOnHeap[0],
+		KeySize:   btreeOnHeap[1],
+		ValueSize: btreeOnHeap[2],
+		Levels:    btreeOnHeap[3],
+		HIDRoot:   Identifier(binary.LittleEndian.Uint32(btreeOnHeap[4:])),
+	}, nil
+}

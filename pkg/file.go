@@ -26,6 +26,30 @@ import (
 	"github.com/rotisserie/eris"
 )
 
+// RecoveryOptions holds opt-in controls for recovery heuristics
+// to manage cost and false-positive risk.
+type RecoveryOptions struct {
+	EnableUnalignedBlockScan    bool     // whether to run the unaligned fallback pass
+	MaxUnalignedChecksPerBlock  int      // cap on unaligned candidate checks per block
+	EnableAggressiveCarver      bool     // whether to run the signature-based carver
+	MaxCarverBlocksToScan       int      // cap on number of blocks to scan (0 = unlimited)
+	MaxCarverCandidatesPerBlock int      // cap of candidates per block to consider
+	CarverSignatures            [][]byte // list of byte sequences to search for
+	// EnableSLENTRYCarver enables scanning for raw SLENTRY-like structures (opt-in)
+	EnableSLENTRYCarver          bool // whether to run the SLENTRY-pattern carver
+	MaxSLENTRYCandidatesPerBlock int  // cap of SLENTRY candidates per block to consider
+	// EnableAggressiveCarverRelaxedValidation, when true, allows the carver to accept
+	// candidates without successfully building a Heap-on-Node. This is useful for
+	// experimental runs against heavily damaged PSTs and should remain opt-in.
+	EnableAggressiveCarverRelaxedValidation bool
+	// MaxSLENTRYCandidatesToSamplePerRun caps the number of SLENTRY candidates to return
+	// from a single run of the SLENTRY carver. If 0, no sampling is applied (return all).
+	MaxSLENTRYCandidatesToSamplePerRun int
+	// MaxSLENTRYValidationPerRun caps how many sampled SLENTRY candidates are strictly validated
+	// (using GetBlockBTreeNode + GetHeapOnNodeFromLocalDescriptor). Default 0 (disabled).
+	MaxSLENTRYValidationPerRun int
+}
+
 // File represents a PST file.
 type File struct {
 	Reader         Reader
@@ -34,6 +58,13 @@ type File struct {
 	NodeBTree      BTreeStore
 	BlockBTree     BTreeStore
 	NameToIDMap    *NameToIDMap
+	// RecoveryMode enables lenient parsing to recover data from corrupted PST files.
+	// When enabled, certain validation errors (like invalid table types) are skipped.
+	RecoveryMode bool
+	// RecoveryOptions contains opt-in controls for expensive or risky heuristics.
+	RecoveryOptions *RecoveryOptions
+	// Diagnostics holds runtime recovery metrics to help tune heuristics.
+	Diagnostics *RecoveryDiagnostics
 }
 
 // Reader defines the file reader used by go-pst to support asynchronous I/O.
@@ -58,18 +89,48 @@ func NewDefaultReader(reader io.ReaderAt) *DefaultReader {
 // New is a constructor for creating PST files.
 // See also NewAsync.
 func New(reader io.ReaderAt) (*File, error) {
-	return NewFromReaderWithBTrees(NewDefaultReader(reader), NewBTreeStoreInMemory(), NewBTreeStoreInMemory())
+	return newFromReaderWithOptions(NewDefaultReader(reader), NewBTreeStoreInMemory(), NewBTreeStoreInMemory(), false)
+}
+
+// NewWithRecoveryMode is a constructor for creating PST files with recovery mode enabled.
+// Recovery mode allows parsing corrupted PST files by skipping certain validation errors.
+// This is useful for recovering data from damaged files.
+func NewWithRecoveryMode(reader io.ReaderAt) (*File, error) {
+	return newFromReaderWithOptions(NewDefaultReader(reader), NewBTreeStoreInMemory(), NewBTreeStoreInMemory(), true)
 }
 
 // NewFromReaderWithBTrees is a constructor for creating PST files from a reader using the specified b-tree stores.
 // Initialization of the b-tree stores will be skipped respectively if not empty.
 func NewFromReaderWithBTrees(reader Reader, nodeBTree BTreeStore, blockBTree BTreeStore) (*File, error) {
+	return newFromReaderWithOptions(reader, nodeBTree, blockBTree, false)
+}
+
+// NewFromReaderWithBTreesRecoveryMode is a constructor for creating PST files from a reader using the specified b-tree stores with recovery mode enabled.
+func NewFromReaderWithBTreesRecoveryMode(reader Reader, nodeBTree BTreeStore, blockBTree BTreeStore) (*File, error) {
+	return newFromReaderWithOptions(reader, nodeBTree, blockBTree, true)
+}
+
+// newFromReaderWithOptions is the internal constructor that handles all initialization options.
+func newFromReaderWithOptions(reader Reader, nodeBTree BTreeStore, blockBTree BTreeStore, recoveryMode bool) (*File, error) {
 	pstFile := &File{
 		Reader: &DefaultReader{
 			reader: reader,
 		},
-		NodeBTree:  nodeBTree,
-		BlockBTree: blockBTree,
+		NodeBTree:    nodeBTree,
+		BlockBTree:   blockBTree,
+		RecoveryMode: recoveryMode,
+		// Default recovery options; aggressive carver is opt-in
+		RecoveryOptions: &RecoveryOptions{
+			EnableUnalignedBlockScan:                true,
+			MaxUnalignedChecksPerBlock:              16,
+			EnableAggressiveCarver:                  false,
+			MaxCarverBlocksToScan:                   512,
+			MaxCarverCandidatesPerBlock:             8,
+			CarverSignatures:                        [][]byte{[]byte("IPM.Note")},
+			EnableAggressiveCarverRelaxedValidation: false, EnableSLENTRYCarver: false,
+			MaxSLENTRYCandidatesPerBlock:       8,
+			MaxSLENTRYCandidatesToSamplePerRun: 256,
+			MaxSLENTRYValidationPerRun:         0},
 	}
 
 	isValidSignature, err := pstFile.IsValidSignature()
@@ -131,11 +192,30 @@ func NewFromReaderWithBTrees(reader Reader, nodeBTree BTreeStore, blockBTree BTr
 	nameToIDMap, err := pstFile.GetNameToIDMap()
 
 	if err != nil {
-		return nil, err
+		if pstFile.RecoveryMode {
+			// In recovery mode, continue with an empty Name-To-ID Map
+			pstFile.NameToIDMap = &NameToIDMap{
+				PropertySets: []string{},
+				NameToID:     make(map[int]int),
+				IDToName:     make(map[int]int),
+				StringToID:   make(map[string]int),
+				IDToString:   make(map[int]string),
+			}
+		} else {
+			return nil, err
+		}
+	} else {
+		pstFile.NameToIDMap = nameToIDMap
 	}
 
-	pstFile.NameToIDMap = nameToIDMap
-
+	// Initialize diagnostics for recovery heuristics tuning
+	pstFile.Diagnostics = &RecoveryDiagnostics{
+		NeighborSearchRadiusTried:     make(map[int]int),
+		NeighborSearchHitDistances:    make(map[int]int),
+		CarverSLEntryUniqueCandidates: 0,
+		CarverSLEntrySampled:          0,
+		CarverSLEntryValidated:        0,
+	}
 	return pstFile, nil
 }
 
@@ -216,6 +296,86 @@ func (file *File) GetFormatType() (FormatType, error) {
 	default:
 		return 0, ErrFormatTypeUnsupported
 	}
+}
+
+// RecoveryDiagnostics contains counters and histograms used to tune recovery heuristics
+// such as neighbor-local-descriptor inference and global descriptor scans.
+type RecoveryDiagnostics struct {
+	NeighborSearchAttempts     int         // total neighbor searches attempted
+	NeighborSearchHits         int         // total neighbor searches that found a descriptor
+	NeighborSearchRadiusTried  map[int]int // radius => attempts
+	NeighborSearchHitDistances map[int]int // distance => hits
+	NeighborPredecessorHits    int         // hits found in predecessor nodes
+	NeighborSuccessorHits      int         // hits found in successor nodes
+	GlobalSearchAttempts       int         // global descriptor scan attempts
+	GlobalSearchHits           int         // successful global descriptor finds
+	// Block scanning diagnostics
+	BlockScanAttempts          int // total block scan attempts
+	BlockNodesScanned          int // total block nodes scanned
+	BlockScanCandidatesChecked int // unaligned/extra candidates checked per block
+	BlockScanHits              int // successful finds in block payloads
+	BlockScanValidatedHits     int // validated (Heap-on-Node) hits
+	// Carver diagnostics
+	CarverAttempts         int // number of times carver started
+	CarverCandidatesFound  int // number of signature occurrences found
+	CarverRecovered        int // number of recovered descriptors from carver
+	CarverRecoveredRelaxed int // number of recovered descriptors found via relaxed validation
+	// SLENTRY-specific diagnostics
+	CarverSLEntryCandidatesFound  int // number of SLENTRY candidate occurrences found
+	CarverSLEntryRecovered        int // number of SLENTRY-based recovered descriptors
+	CarverSLEntryRecoveredRelaxed int // number recovered by SLENTRY carver under relaxed validation
+	CarverSLEntryUniqueCandidates int // number of unique SLENTRY candidates (deduped)
+	CarverSLEntrySampled          int // number of SLENTRY candidates returned after sampling
+	CarverSLEntryValidated        int // number of sampled SLENTRY candidates validated successfully (Heap-on-Node built)
+
+}
+
+// ResetRecoveryDiagnostics resets diagnostics counters and histograms.
+func (file *File) ResetRecoveryDiagnostics() {
+	if file.Diagnostics == nil {
+		file.Diagnostics = &RecoveryDiagnostics{
+			NeighborSearchRadiusTried:  make(map[int]int),
+			NeighborSearchHitDistances: make(map[int]int),
+		}
+		return
+	}
+
+	file.Diagnostics.NeighborSearchAttempts = 0
+	file.Diagnostics.NeighborSearchHits = 0
+	file.Diagnostics.NeighborPredecessorHits = 0
+	file.Diagnostics.NeighborSuccessorHits = 0
+	file.Diagnostics.GlobalSearchAttempts = 0
+	file.Diagnostics.GlobalSearchHits = 0
+	file.Diagnostics.BlockScanAttempts = 0
+	file.Diagnostics.BlockNodesScanned = 0
+	file.Diagnostics.BlockScanCandidatesChecked = 0
+	file.Diagnostics.BlockScanHits = 0
+	file.Diagnostics.BlockScanValidatedHits = 0
+	file.Diagnostics.CarverRecoveredRelaxed = 0
+	file.Diagnostics.CarverSLEntryCandidatesFound = 0
+	file.Diagnostics.CarverSLEntryRecovered = 0
+	file.Diagnostics.CarverSLEntryRecoveredRelaxed = 0
+	file.Diagnostics.CarverSLEntryUniqueCandidates = 0
+	file.Diagnostics.CarverSLEntrySampled = 0
+	file.Diagnostics.CarverSLEntryValidated = 0
+
+	for k := range file.Diagnostics.NeighborSearchRadiusTried {
+		delete(file.Diagnostics.NeighborSearchRadiusTried, k)
+	}
+	for k := range file.Diagnostics.NeighborSearchHitDistances {
+		delete(file.Diagnostics.NeighborSearchHitDistances, k)
+	}
+}
+
+// GetRecoveryDiagnostics returns a copy of the current diagnostics snapshot.
+func (file *File) GetRecoveryDiagnostics() RecoveryDiagnostics {
+	if file.Diagnostics == nil {
+		return RecoveryDiagnostics{
+			NeighborSearchRadiusTried:  make(map[int]int),
+			NeighborSearchHitDistances: make(map[int]int),
+		}
+	}
+	return *file.Diagnostics
 }
 
 type EncryptionType uint8
