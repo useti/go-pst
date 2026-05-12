@@ -173,7 +173,24 @@ func (folder *Folder) GetSubFolders() ([]Folder, error) {
 type WalkFolderFunc = func(folder *Folder) error
 
 // WalkFolders walks all folders recursively.
+// For PST files, this walks the folder hierarchy starting from the root folder.
+// For MSG files, this returns a single synthetic root folder.
 func (file *File) WalkFolders(walkFolderFunc WalkFolderFunc) error {
+	// Handle MSG files with a synthetic root folder
+	if file.ContentType == ContentTypeMSG {
+		// Create a synthetic root folder for MSG files
+		msgRootFolder := Folder{
+			Identifier:    IdentifierRootFolder,
+			Name:          "Root Message",
+			HasSubFolders: false,
+			MessageCount:  1, // MSG files contain exactly one message
+			File:          file,
+		}
+
+		return walkFolderFunc(&msgRootFolder)
+	}
+
+	// Handle PST files with the normal folder hierarchy
 	rootFolder, err := file.GetRootFolder()
 
 	if err != nil {

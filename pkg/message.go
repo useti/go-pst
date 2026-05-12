@@ -40,8 +40,14 @@ type Message struct {
 }
 
 // GetMessageTableContext returns the message table context of this folder which contains references to all messages.
+// For MSG files, this returns an error since message iteration is handled by GetMessageIterator.
 // Note this only returns the identifier of each message.
 func (folder *Folder) GetMessageTableContext() (TableContext, error) {
+	// MSG files don't have a message table context - use GetMessageIterator instead
+	if folder.File.ContentType == ContentTypeMSG {
+		return TableContext{}, eris.New("MSG files do not have a message table context; use GetMessageIterator() instead")
+	}
+
 	emailsIdentifier := folder.Identifier + 12
 
 	emailsNode, err := folder.File.GetNodeBTreeNode(emailsIdentifier)
@@ -83,6 +89,11 @@ type MessageIterator struct {
 	file                *File
 	messageTableContext TableContext
 
+	// MSG file support
+	isMSGFile          bool
+	msgRootMessage     *Message
+	msgMessageReturned bool
+
 	err            error
 	currentIndex   int
 	currentMessage *Message
@@ -96,6 +107,19 @@ func (messageIterator *MessageIterator) Err() error {
 // Next will ensure that Value returns the next item when executed.
 // If the next value is not retrievable, Next will return false and Err() will return the error cause.
 func (messageIterator *MessageIterator) Next() bool {
+	// Handle MSG files - they have exactly one message
+	if messageIterator.isMSGFile {
+		if messageIterator.msgMessageReturned {
+			return false
+		}
+
+		messageIterator.msgMessageReturned = true
+		messageIterator.currentIndex = 1
+		messageIterator.currentMessage = messageIterator.msgRootMessage
+		return true
+	}
+
+	// Handle PST files normally
 	hasNext := len(messageIterator.messageTableContext.Properties) > messageIterator.currentIndex
 
 	if !hasNext {
@@ -144,6 +168,9 @@ func (messageIterator *MessageIterator) Value() *Message {
 
 // Size returns the amount of messages in the message iterator.
 func (messageIterator *MessageIterator) Size() int {
+	if messageIterator.isMSGFile {
+		return 1 // MSG files contain exactly one message
+	}
 	return len(messageIterator.messageTableContext.Properties)
 }
 
@@ -152,7 +179,24 @@ func (messageIterator *MessageIterator) CurrentIndex() int {
 }
 
 // GetMessageIterator returns an iterator for messages.
+// For MSG files, this returns an iterator with the single root message.
+// For PST files, this returns an iterator for the folder's messages.
 func (folder *Folder) GetMessageIterator() (MessageIterator, error) {
+	// Handle MSG files - they have exactly one message
+	if folder.File.ContentType == ContentTypeMSG {
+		rootMessage := folder.File.GetRootMessage()
+		if rootMessage == nil {
+			return MessageIterator{}, ErrMessagesNotFound
+		}
+
+		return MessageIterator{
+			file:           folder.File,
+			isMSGFile:      true,
+			msgRootMessage: rootMessage,
+		}, nil
+	}
+
+	// Handle PST files normally
 	if folder.MessageCount == 0 {
 		return MessageIterator{}, ErrMessagesNotFound
 	} else if folder.Identifier.GetType() == IdentifierTypeSearchFolder {
