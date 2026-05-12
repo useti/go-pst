@@ -18,5 +18,7 @@ require (
 	github.com/emersion/go-textwrapper v0.0.0-20200911093747-65d896831594 // indirect
 	github.com/libp2p/go-sockaddr v0.1.1 // indirect
 	github.com/philhofer/fwd v1.1.2 // indirect
+	github.com/richardlehane/mscfb v1.0.6 // indirect
+	github.com/richardlehane/msoleps v1.0.3 // indirect
 	golang.org/x/sys v0.12.0 // indirect
 )

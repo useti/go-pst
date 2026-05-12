@@ -30,6 +30,8 @@
 
 The PFF (Personal Folder File) and OFF (Offline Folder File) format is used to store Microsoft Outlook e-mails, appointments and contacts. The PST (Personal Storage Table), OST (Offline Storage Table) and PAB (Personal Address Book) file format consist of the PFF format.
 
+Additionally, the library supports reading individual MSG (Outlook Message) files, which are single messages exported from Outlook.
+
 ## Usage
 
 ```bash
@@ -170,6 +172,33 @@ func main() {
   }
 
   fmt.Printf("Time: %s\n", time.Since(startTime).String())
+}
+```
+
+### Reading MSG Files
+
+For MSG files, which contain a single message:
+
+```go
+reader, err := os.Open("message.msg")
+if err != nil {
+  panic(err)
+}
+
+pstFile, err := pst.New(reader)
+if err != nil {
+  panic(err)
+}
+
+if pstFile.ContentType == pst.ContentTypeMSG {
+  message := pstFile.GetRootMessage()
+  if message != nil {
+    // Process the message
+    if msgProps, ok := message.Properties.(*properties.Message); ok {
+      subject := msgProps.GetSubject()
+      fmt.Printf("Subject: %s\n", subject)
+    }
+  }
 }
 ```
 

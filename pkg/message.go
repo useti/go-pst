@@ -36,6 +36,7 @@ type Message struct {
 	AttachmentTableContext *TableContext
 	LocalDescriptors       []LocalDescriptor // Used by the PropertyContext and TableContext.
 	Properties             msgp.Decodable    // Type properties.Message, properties.Appointment, properties.Contact
+	Attachments            []*Attachment     // For MSG files, contains parsed attachments
 }
 
 // GetMessageTableContext returns the message table context of this folder which contains references to all messages.

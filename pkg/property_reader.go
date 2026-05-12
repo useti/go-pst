@@ -20,9 +20,11 @@ package pst
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/tinylib/msgp/msgp"
+	"io"
 	"math"
 	"time"
+
+	"github.com/tinylib/msgp/msgp"
 
 	"github.com/rotisserie/eris"
 	"golang.org/x/text/encoding/ianaindex"
@@ -60,7 +62,13 @@ func NewPropertyReader(property Property, heapOnNode *HeapOnNode, file *File, lo
 // WriteMessagePackValue writes the Message Pack format of the property value.
 // Used to populate struct fields.
 func (propertyReader *PropertyReader) WriteMessagePackValue(writer *msgp.Writer) error {
-	key := fmt.Sprintf("%d%d", propertyReader.Property.ID, propertyReader.Property.Type)
+	keyType := propertyReader.Property.Type
+	if keyType == PropertyTypeString8 {
+		keyType = PropertyTypeString
+	} else if keyType == PropertyTypeMultipleString8 {
+		keyType = PropertyTypeMultipleString
+	}
+	key := fmt.Sprintf("%d%d", propertyReader.Property.ID, keyType)
 
 	switch propertyReader.Property.Type {
 	case PropertyTypeString:
@@ -196,7 +204,7 @@ func (propertyReader *PropertyReader) GetBinary() ([]byte, error) {
 func (propertyReader *PropertyReader) GetString() (string, error) {
 	if propertyReader.Property.Type != PropertyTypeString {
 		return "", ErrPropertyTypeMismatch
-	} else if propertyReader.HeapOnNodeReader == nil || propertyReader.Property.HNID == 0 {
+	} else if propertyReader.HeapOnNodeReader == nil && len(propertyReader.Property.Data) == 0 {
 		return "", ErrPropertyNoData
 	}
 
@@ -213,7 +221,7 @@ func (propertyReader *PropertyReader) GetString() (string, error) {
 func (propertyReader *PropertyReader) GetString8(codepageIdentifier int) (string, error) {
 	if propertyReader.Property.Type != PropertyTypeString8 {
 		return "", ErrPropertyTypeMismatch
-	} else if propertyReader.HeapOnNodeReader == nil || propertyReader.Property.HNID == 0 {
+	} else if propertyReader.HeapOnNodeReader == nil && len(propertyReader.Property.Data) == 0 {
 		return "", ErrPropertyNoData
 	}
 
@@ -333,12 +341,31 @@ func (propertyReader *PropertyReader) GetBoolean() (bool, error) {
 	return propertyReader.Property.Data[0] == 1, nil
 }
 
-// ReadAt reads the underlying Heap-on-Node.
+// ReadAt reads the underlying Heap-on-Node or property data.
 func (propertyReader *PropertyReader) ReadAt(outputBuffer []byte, offset int64) (int, error) {
-	return propertyReader.HeapOnNodeReader.ReadAt(outputBuffer, offset)
+	if propertyReader.HeapOnNodeReader != nil {
+		return propertyReader.HeapOnNodeReader.ReadAt(outputBuffer, offset)
+	}
+	// For inline data
+	if len(propertyReader.Property.Data) == 0 {
+		return 0, ErrPropertyNoData
+	}
+	start := int(offset)
+	if start < 0 || start >= len(propertyReader.Property.Data) {
+		return 0, io.EOF
+	}
+	end := start + len(outputBuffer)
+	if end > len(propertyReader.Property.Data) {
+		end = len(propertyReader.Property.Data)
+	}
+	copy(outputBuffer, propertyReader.Property.Data[start:end])
+	return end - start, nil
 }
 
-// Size returns the size of the Heap-on-Node.
+// Size returns the size of the Heap-on-Node or property data.
 func (propertyReader *PropertyReader) Size() int64 {
-	return propertyReader.HeapOnNodeReader.Size()
+	if propertyReader.HeapOnNodeReader != nil {
+		return propertyReader.HeapOnNodeReader.Size()
+	}
+	return int64(len(propertyReader.Property.Data))
 }

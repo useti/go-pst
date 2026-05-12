@@ -20,10 +20,17 @@ package pst
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"io"
+	"log"
+	"strconv"
+	"strings"
 
 	_ "github.com/emersion/go-message/charset"
+	"github.com/richardlehane/mscfb"
 	"github.com/rotisserie/eris"
+	"github.com/tinylib/msgp/msgp"
+	"github.com/useti/go-pst/v6/pkg/properties"
 )
 
 // RecoveryOptions holds opt-in controls for recovery heuristics
@@ -65,6 +72,10 @@ type File struct {
 	RecoveryOptions *RecoveryOptions
 	// Diagnostics holds runtime recovery metrics to help tune heuristics.
 	Diagnostics *RecoveryDiagnostics
+	// ContentType holds the detected content type.
+	ContentType ContentType
+	// RootMessage holds the root message for MSG files.
+	RootMessage *Message
 }
 
 // Reader defines the file reader used by go-pst to support asynchronous I/O.
@@ -113,9 +124,7 @@ func NewFromReaderWithBTreesRecoveryMode(reader Reader, nodeBTree BTreeStore, bl
 // newFromReaderWithOptions is the internal constructor that handles all initialization options.
 func newFromReaderWithOptions(reader Reader, nodeBTree BTreeStore, blockBTree BTreeStore, recoveryMode bool) (*File, error) {
 	pstFile := &File{
-		Reader: &DefaultReader{
-			reader: reader,
-		},
+		Reader:       reader,
 		NodeBTree:    nodeBTree,
 		BlockBTree:   blockBTree,
 		RecoveryMode: recoveryMode,
@@ -141,6 +150,32 @@ func newFromReaderWithOptions(reader Reader, nodeBTree BTreeStore, blockBTree BT
 		return nil, ErrFileSignatureInvalid
 	}
 
+	contentType, err := pstFile.GetContentType()
+
+	if err != nil {
+		return nil, err
+	}
+
+	pstFile.ContentType = contentType
+
+	if contentType == ContentTypeMSG {
+		// For MSG files, parse the OLE2 structure
+		// log.Printf("Parsing MSG file with OLE2 structure\n")
+		err := pstFile.parseMSG()
+		if err != nil {
+			fmt.Printf("Failed to parse MSG file: %+v\n", err)
+			pstFile.Cleanup()
+			return nil, err
+		}
+		// Initialize diagnostics
+		pstFile.Diagnostics = &RecoveryDiagnostics{
+			NeighborSearchRadiusTried:  make(map[int]int),
+			NeighborSearchHitDistances: make(map[int]int),
+		}
+		return pstFile, nil
+	}
+
+	// For PST/OST/PAB files
 	formatType, err := pstFile.GetFormatType()
 
 	if err != nil {
@@ -148,10 +183,6 @@ func newFromReaderWithOptions(reader Reader, nodeBTree BTreeStore, blockBTree BT
 	}
 
 	pstFile.FormatType = formatType
-
-	if _, err := pstFile.GetContentType(); err != nil {
-		return nil, err
-	}
 
 	encryptionType, err := pstFile.GetEncryptionType()
 
@@ -219,19 +250,30 @@ func newFromReaderWithOptions(reader Reader, nodeBTree BTreeStore, blockBTree BT
 	return pstFile, nil
 }
 
-// IsValidSignature returns true is the file matches the PFF format signature.
+// IsValidSignature returns true if the file matches the PFF format signature or OLE2 signature for MSG files.
 // References "File Header".
 func (file *File) IsValidSignature() (bool, error) {
-	signature := make([]byte, 4)
+	signature := make([]byte, 8)
 
 	if _, err := file.Reader.ReadAt(signature, 0); err != nil {
 		return false, eris.Wrap(err, "failed to read signature")
 	}
 
-	return bytes.Equal(signature, []byte("!BDN")), nil
+	// Check for PST signature "!BDN"
+	if bytes.Equal(signature[:4], []byte("!BDN")) {
+		return true, nil
+	}
+
+	// Check for OLE2 signature for MSG files
+	ole2Signature := []byte{0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1}
+	if bytes.Equal(signature, ole2Signature) {
+		return true, nil
+	}
+
+	return false, nil
 }
 
-// ContentType represents a PST, OST or PAB file.
+// ContentType represents a PST, OST, PAB or MSG file.
 type ContentType uint8
 
 // Constants defining the content types.
@@ -240,11 +282,23 @@ const (
 	ContentTypePST ContentType = iota
 	ContentTypeOST
 	ContentTypePAB
+	ContentTypeMSG
 )
 
-// GetContentType returns if the file is a PST, OST or PAB file.
+// GetContentType returns if the file is a PST, OST, PAB or MSG file.
 // References "File Header", "Content Types".
 func (file *File) GetContentType() (ContentType, error) {
+	// First check if it's an OLE2 file (MSG)
+	signature := make([]byte, 8)
+	if _, err := file.Reader.ReadAt(signature, 0); err != nil {
+		return 0, eris.Wrap(err, "failed to read signature for content type")
+	}
+	ole2Signature := []byte{0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1}
+	if bytes.Equal(signature, ole2Signature) {
+		return ContentTypeMSG, nil
+	}
+
+	// For PST/OST/PAB files
 	contentType := make([]byte, 2)
 
 	if _, err := file.Reader.ReadAt(contentType, 8); err != nil {
@@ -417,6 +471,11 @@ func (file *File) GetEncryptionType() (EncryptionType, error) {
 	}
 }
 
+// GetRootMessage returns the root message for MSG files, or nil for PST files.
+func (file *File) GetRootMessage() *Message {
+	return file.RootMessage
+}
+
 // Cleanup clears the node and block b-trees.
 func (file *File) Cleanup() {
 	file.NodeBTree.Clear()
@@ -428,12 +487,254 @@ func (defaultReader *DefaultReader) ReadAt(outputBuffer []byte, offset int64) (i
 	return defaultReader.reader.ReadAt(outputBuffer, offset)
 }
 
+// parseMSGProperties parses the properties from MSG __properties_version1.0 stream.
+func parseMSGProperties(data []byte, streamValues map[uint32][]byte) ([]Property, error) {
+	if len(data) < 32 {
+		log.Printf("Properties data too short: %d bytes\n", len(data))
+		return nil, eris.New("properties data too short")
+	}
+
+	// Skip 32-byte header
+	data = data[32:]
+
+	var properties []Property
+
+	for len(data) >= 16 {
+		propertyTag := binary.LittleEndian.Uint32(data[0:4])
+		flags := binary.LittleEndian.Uint32(data[4:8])
+		value := data[8:16]
+
+		property := Property{
+			ID:   uint16(propertyTag >> 16),
+			Type: PropertyType(propertyTag & 0xFFFF),
+		}
+
+		if streamValue, ok := streamValues[propertyTag]; ok {
+			property.Data = streamValue
+		} else if property.Type.GetDataSize() != -1 && property.Type.GetDataSize() <= len(value) {
+			property.Data = value[:property.Type.GetDataSize()]
+		} else if flags&0x0001 != 0 {
+			property.Data = value
+		} else {
+			property.HNID = Identifier(binary.LittleEndian.Uint64(value))
+		}
+
+		properties = append(properties, property)
+		// log.Printf("Parsed property: ID=0x%X, Type=0x%X, Flags=0x%X, Data len=%d\n", property.ID, property.Type, flags, len(property.Data))
+
+		data = data[16:]
+	}
+
+	return properties, nil
+}
+
+// parseMSG parses the MSG file using OLE2 structure.
+func (file *File) parseMSG() error {
+	// Parse MSG file using OLE2 structure.
+	buffer := make([]byte, 10*1024*1024) // 10MB, should be enough for MSG
+	n, err := file.Reader.ReadAt(buffer, 0)
+	if err != nil && err != io.EOF {
+		return eris.Wrap(err, "failed to read MSG file")
+	}
+	buffer = buffer[:n]
+
+	// Parse OLE2
+	doc, err := mscfb.New(bytes.NewReader(buffer))
+	if err != nil {
+		return eris.Wrap(err, "failed to parse OLE2")
+	}
+
+	// Find the root __properties_version1.0 stream and collect root-level stream values from __substg1.0 streams.
+	var propertiesFile *mscfb.File
+	streamValues := make(map[uint32][]byte)
+	attachmentData := make(map[string]map[string]interface{})
+
+	for entry, err := doc.Next(); err == nil; entry, err = doc.Next() {
+		// Collect root-level message properties and data
+		if len(entry.Path) == 0 {
+			if entry.Name == "__properties_version1.0" {
+				propertiesFile = entry
+				continue
+			}
+
+			if strings.HasPrefix(entry.Name, "__substg1.0_") {
+				fullName := strings.TrimPrefix(entry.Name, "__substg1.0_")
+				if idx := strings.Index(fullName, "-"); idx != -1 {
+					fullName = fullName[:idx]
+				}
+
+				tag, parseErr := strconv.ParseUint(fullName, 16, 32)
+				if parseErr != nil {
+					continue
+				}
+
+				data, readErr := io.ReadAll(entry)
+				if readErr != nil {
+					continue
+				}
+
+				streamValues[uint32(tag)] = data
+			}
+		}
+
+		// Collect attachment data
+		if len(entry.Path) == 1 && strings.HasPrefix(entry.Path[0], "__attach_version1.0_") {
+			attachDir := entry.Path[0]
+			if _, exists := attachmentData[attachDir]; !exists {
+				attachmentData[attachDir] = make(map[string]interface{})
+			}
+
+			if entry.Name == "__properties_version1.0" {
+				propData, readErr := io.ReadAll(entry)
+				if readErr != nil {
+					continue
+				}
+				attachmentData[attachDir]["propData"] = propData
+			}
+
+			if strings.HasPrefix(entry.Name, "__substg1.0_") {
+				fullName := strings.TrimPrefix(entry.Name, "__substg1.0_")
+				if idx := strings.Index(fullName, "-"); idx != -1 {
+					fullName = fullName[:idx]
+				}
+
+				tag, parseErr := strconv.ParseUint(fullName, 16, 32)
+				if parseErr != nil {
+					continue
+				}
+
+				data, readErr := io.ReadAll(entry)
+				if readErr != nil {
+					continue
+				}
+
+				streamMap, ok := attachmentData[attachDir]["streamValues"].(map[uint32][]byte)
+				if !ok {
+					streamMap = make(map[uint32][]byte)
+					attachmentData[attachDir]["streamValues"] = streamMap
+				}
+				streamMap[uint32(tag)] = data
+			}
+		}
+	}
+
+	if propertiesFile == nil {
+		return eris.New("properties stream not found")
+	}
+
+	propertiesData, err := io.ReadAll(propertiesFile)
+	if err != nil {
+		return eris.Wrap(err, "failed to read properties data")
+	}
+
+	// Parse properties
+	parsedProperties, err := parseMSGProperties(propertiesData, streamValues)
+	if err != nil {
+		log.Printf("Failed to parse MSG properties: %+v\n", err)
+		return eris.Wrap(err, "failed to parse MSG properties")
+	}
+
+	// Create PropertyContext
+	propertyContext := &PropertyContext{
+		Properties: parsedProperties,
+		HeapOnNode: nil, // For MSG, no heap on node
+		File:       file,
+	}
+
+	// Ensure NameToIDMap exists for MSG files to avoid nil dereference during Populate.
+	file.NameToIDMap = &NameToIDMap{
+		PropertySets: []string{},
+		NameToID:     make(map[int]int),
+		IDToName:     make(map[int]int),
+		StringToID:   make(map[string]int),
+		IDToString:   make(map[int]string),
+	}
+
+	// Choose the typed message struct based on the message class.
+	var messageProperties msgp.Decodable = &properties.Message{}
+
+	if classReader, err := propertyContext.GetPropertyReader(26, nil); err == nil {
+		if messageClass, err := classReader.GetString(); err == nil {
+			switch messageClass {
+			case "IPM.Appointment", "IPM.Schedule.Meeting", "IPM.Schedule.Meeting.Request", "IPM.OLE.CLASS.{00061055-0000-0000-C000-000000000046}":
+				messageProperties = &properties.Appointment{}
+			case "IPM.Contact", "IPM.AbchPerson":
+				messageProperties = &properties.Contact{}
+			case "IPM.Task":
+				messageProperties = &properties.Task{}
+			case "IPM.Activity":
+				messageProperties = &properties.Journal{}
+			case "IPM.Post.Rss":
+				messageProperties = &properties.RSS{}
+			case "IPM.DistList":
+				messageProperties = &properties.AddressBook{}
+			default:
+				messageProperties = &properties.Message{}
+			}
+		}
+	}
+
+	if err := propertyContext.Populate(messageProperties, nil); err != nil {
+		return eris.Wrap(err, "failed to populate MSG properties")
+	}
+
+	// Create attachments from collected data
+	var attachments []*Attachment
+	for _, data := range attachmentData {
+		propDataRaw, ok := data["propData"].([]byte)
+		if !ok || len(propDataRaw) == 0 {
+			continue
+		}
+
+		streamValues := make(map[uint32][]byte)
+		if streamMap, ok := data["streamValues"].(map[uint32][]byte); ok {
+			streamValues = streamMap
+		}
+
+		parsedProps, err := parseMSGProperties(propDataRaw, streamValues)
+		if err != nil {
+			continue
+		}
+
+		propContext := &PropertyContext{
+			Properties: parsedProps,
+			HeapOnNode: nil,
+			File:       nil,
+		}
+
+		attachObj := &Attachment{
+			PropertyContext: propContext,
+		}
+
+		// Try to get attachment filename
+		if nameReader, err := propContext.GetPropertyReader(3708, nil); err == nil {
+			if name, err := nameReader.GetString(); err == nil {
+				attachObj.AttachFilename = &name
+			}
+		}
+
+		attachments = append(attachments, attachObj)
+	}
+
+	// Create Message
+	message := &Message{
+		File:            file,
+		PropertyContext: propertyContext,
+		Properties:      messageProperties,
+		Attachments:     attachments,
+	}
+
+	file.RootMessage = message
+
+	return nil
+}
+
 // ReadAtAsync is a fall-back which calls io.ReaderAt.
 // See AsyncReader for Linux io_uring support.
 func (defaultReader *DefaultReader) ReadAtAsync(outputBuffer []byte, offset uint64, callback func(err error)) (uint64, error) {
-	_, err := defaultReader.reader.ReadAt(outputBuffer, int64(offset))
+	n, err := defaultReader.reader.ReadAt(outputBuffer, int64(offset))
 
 	callback(err)
 
-	return 0, err
+	return uint64(n), err
 }
