@@ -34,7 +34,15 @@ type Attachment struct {
 }
 
 // HasAttachments returns true if this message has attachments.
+// For MSG files, checks if any attachments were parsed.
+// For PST files, checks the message flags.
 func (message *Message) HasAttachments() (bool, error) {
+	// Handle MSG files - attachments are pre-parsed
+	if message.File.ContentType == ContentTypeMSG {
+		return len(message.Attachments) > 0, nil
+	}
+
+	// Handle PST files
 	reader, err := message.PropertyContext.GetPropertyReader(3591, message.LocalDescriptors)
 
 	if err != nil {
@@ -51,8 +59,14 @@ func (message *Message) HasAttachments() (bool, error) {
 }
 
 // GetAttachmentTableContext returns the table context of the attachments of this message.
+// For MSG files, this returns an error since attachments are pre-parsed.
 // Note we only return the attachment identifier property.
 func (message *Message) GetAttachmentTableContext() (*TableContext, error) {
+	// MSG files don't have an attachment table context - use GetAllAttachments instead
+	if message.File.ContentType == ContentTypeMSG {
+		return nil, eris.New("MSG files do not have an attachment table context; use GetAllAttachments() or GetAttachment() directly")
+	}
+
 	hasAttachments, err := message.HasAttachments()
 
 	if err != nil {
@@ -95,8 +109,16 @@ func (message *Message) GetAttachmentTableContext() (*TableContext, error) {
 	return message.AttachmentTableContext, nil
 }
 
-// GetAttachmentCount returns the amount of rows in the attachment table context.
+// GetAttachmentCount returns the amount of attachments.
+// For MSG files, returns the count of pre-parsed attachments.
+// For PST files, returns the count from the attachment table context.
 func (message *Message) GetAttachmentCount() (int, error) {
+	// Handle MSG files - attachments are pre-parsed
+	if message.File.ContentType == ContentTypeMSG {
+		return len(message.Attachments), nil
+	}
+
+	// Handle PST files
 	attachmentTableContext, err := message.GetAttachmentTableContext()
 
 	if eris.Is(err, ErrAttachmentsNotFound) {
@@ -109,7 +131,18 @@ func (message *Message) GetAttachmentCount() (int, error) {
 }
 
 // GetAttachment returns the specified attachment.
+// For MSG files, returns directly from pre-parsed attachments.
+// For PST files, retrieves from the attachment table context.
 func (message *Message) GetAttachment(attachmentIndex int) (*Attachment, error) {
+	// Handle MSG files - attachments are pre-parsed
+	if message.File.ContentType == ContentTypeMSG {
+		if attachmentIndex < 0 || attachmentIndex >= len(message.Attachments) {
+			return nil, ErrAttachmentIndexInvalid
+		}
+		return message.Attachments[attachmentIndex], nil
+	}
+
+	// Handle PST files
 	attachmentsTableContext, err := message.GetAttachmentTableContext()
 
 	if err != nil {
@@ -221,8 +254,19 @@ func (file *File) GetAttachment(messageIdentifier Identifier) (*Attachment, erro
 }
 
 // GetAllAttachments returns the attachments of this message.
+// For MSG files, returns the pre-parsed attachments directly.
+// For PST files, iterates through the attachment table context.
 // See AttachmentIterator.
 func (message *Message) GetAllAttachments() ([]*Attachment, error) {
+	// Handle MSG files - attachments are pre-parsed
+	if message.File.ContentType == ContentTypeMSG {
+		if len(message.Attachments) == 0 {
+			return nil, nil
+		}
+		return message.Attachments, nil
+	}
+
+	// Handle PST files
 	attachmentCount, err := message.GetAttachmentCount()
 
 	if eris.Is(err, ErrAttachmentsNotFound) {
