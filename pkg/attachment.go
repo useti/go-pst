@@ -294,6 +294,9 @@ func (message *Message) GetAllAttachments() ([]*Attachment, error) {
 type AttachmentIterator struct {
 	message *Message
 
+	// For MSG files: direct attachment list
+	isMSGFile bool
+
 	err               error
 	currentIndex      int
 	currentAttachment *Attachment
@@ -307,6 +310,22 @@ func (attachmentIterator *AttachmentIterator) Err() error {
 // Next will ensure that Value returns the next item when executed.
 // If the next value is not retrievable, Next will return false and Err() will return the error cause.
 func (attachmentIterator *AttachmentIterator) Next() bool {
+	// For MSG files, iterate through pre-parsed attachments
+	if attachmentIterator.isMSGFile {
+		if attachmentIterator.currentIndex >= len(attachmentIterator.message.Attachments) {
+			return false
+		}
+
+		attachmentIterator.currentAttachment = attachmentIterator.message.Attachments[attachmentIterator.currentIndex]
+		attachmentIterator.currentIndex++
+		return true
+	}
+
+	// For PST files, iterate through attachment table context
+	if attachmentIterator.message.AttachmentTableContext == nil {
+		return false
+	}
+
 	hasNext := len(attachmentIterator.message.AttachmentTableContext.Properties) > attachmentIterator.currentIndex
 
 	if !hasNext {
@@ -333,6 +352,14 @@ func (attachmentIterator *AttachmentIterator) Value() *Attachment {
 
 // Size returns the amount of attachments in the message iterator.
 func (attachmentIterator *AttachmentIterator) Size() int {
+	if attachmentIterator.isMSGFile {
+		return len(attachmentIterator.message.Attachments)
+	}
+
+	if attachmentIterator.message.AttachmentTableContext == nil {
+		return 0
+	}
+
 	return len(attachmentIterator.message.AttachmentTableContext.Properties)
 }
 
@@ -341,6 +368,7 @@ func (attachmentIterator *AttachmentIterator) CurrentIndex() int {
 }
 
 // GetAttachmentIterator returns an iterator for attachments.
+// Works for both MSG files (pre-parsed attachments) and PST files (table context).
 func (message *Message) GetAttachmentIterator() (AttachmentIterator, error) {
 	attachmentCount, err := message.GetAttachmentCount()
 
@@ -352,7 +380,8 @@ func (message *Message) GetAttachmentIterator() (AttachmentIterator, error) {
 	}
 
 	return AttachmentIterator{
-		message: message,
+		message:   message,
+		isMSGFile: message.File.ContentType == ContentTypeMSG,
 	}, nil
 }
 

@@ -271,3 +271,63 @@ func TestMSGGetAllMessages(t *testing.T) {
 		t.Error("Message properties are nil")
 	}
 }
+
+func TestMSGAttachmentIterator(t *testing.T) {
+	// Use EmbeddedImage1.msg which has 1 attachment
+	filePath := "../data/msg/EmbeddedImage1.msg"
+	reader, err := os.Open(filePath)
+	if err != nil {
+		t.Fatalf("Failed to open MSG file %s: %v", filePath, err)
+	}
+	defer reader.Close()
+
+	pstFile, err := pst.New(reader)
+	if err != nil {
+		t.Fatalf("Failed to parse MSG file %s: %v", filePath, err)
+	}
+	defer pstFile.Cleanup()
+
+	message := pstFile.GetRootMessage()
+	if message == nil {
+		t.Fatal("GetRootMessage returned nil")
+	}
+
+	// Get attachment iterator
+	iterator, err := message.GetAttachmentIterator()
+	if err != nil {
+		t.Fatalf("GetAttachmentIterator failed: %v", err)
+	}
+
+	// Verify size matches expected attachment count
+	size := iterator.Size()
+	if size <= 0 {
+		t.Errorf("Expected iterator size > 0, got %d", size)
+	}
+
+	// Iterate through attachments
+	attachmentCount := 0
+	for iterator.Next() {
+		attachmentCount++
+		attachment := iterator.Value()
+
+		if attachment == nil {
+			t.Error("Attachment is nil")
+		} else if attachment.PropertyContext == nil {
+			t.Error("Attachment PropertyContext is nil")
+		}
+	}
+
+	if iterator.Err() != nil {
+		t.Fatalf("Iterator error: %v", iterator.Err())
+	}
+
+	// Should have iterated through at least one attachment
+	if attachmentCount == 0 {
+		t.Error("Expected at least 1 attachment, got 0")
+	}
+
+	// Size should match iteration count
+	if size != attachmentCount {
+		t.Errorf("Iterator size %d does not match iteration count %d", size, attachmentCount)
+	}
+}

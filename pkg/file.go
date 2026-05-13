@@ -528,6 +528,46 @@ func parseMSGProperties(data []byte, streamValues map[uint32][]byte) ([]Property
 	return properties, nil
 }
 
+// parseMSGAttachmentProperties parses attachment properties from MSG __properties_version1.0 stream.
+// Attachment properties use an 8-byte header (instead of 32 bytes for message properties).
+func parseMSGAttachmentProperties(data []byte, streamValues map[uint32][]byte) ([]Property, error) {
+	if len(data) < 8 {
+		return nil, eris.New("attachment properties data too short")
+	}
+
+	// Skip 8-byte header for attachment properties
+	data = data[8:]
+
+	var properties []Property
+
+	for len(data) >= 16 {
+		propertyTag := binary.LittleEndian.Uint32(data[0:4])
+		flags := binary.LittleEndian.Uint32(data[4:8])
+		value := data[8:16]
+
+		property := Property{
+			ID:   uint16(propertyTag >> 16),
+			Type: PropertyType(propertyTag & 0xFFFF),
+		}
+
+		if streamValue, ok := streamValues[propertyTag]; ok {
+			property.Data = streamValue
+		} else if property.Type.GetDataSize() != -1 && property.Type.GetDataSize() <= len(value) {
+			property.Data = value[:property.Type.GetDataSize()]
+		} else if flags&0x0001 != 0 {
+			property.Data = value
+		} else {
+			property.HNID = Identifier(binary.LittleEndian.Uint64(value))
+		}
+
+		properties = append(properties, property)
+
+		data = data[16:]
+	}
+
+	return properties, nil
+}
+
 // parseMSG parses the MSG file using OLE2 structure.
 func (file *File) parseMSG() error {
 	// Parse MSG file using OLE2 structure.
@@ -691,26 +731,28 @@ func (file *File) parseMSG() error {
 			streamValues = streamMap
 		}
 
-		parsedProps, err := parseMSGProperties(propDataRaw, streamValues)
+		// Use parseMSGAttachmentProperties which expects 8-byte header
+		parsedProps, err := parseMSGAttachmentProperties(propDataRaw, streamValues)
 		if err != nil {
+			log.Printf("Failed to parse attachment properties: %v", err)
 			continue
 		}
 
 		propContext := &PropertyContext{
 			Properties: parsedProps,
 			HeapOnNode: nil,
-			File:       nil,
+			File:       file, // Set File reference for proper property reading
 		}
 
 		attachObj := &Attachment{
 			PropertyContext: propContext,
 		}
 
-		// Try to get attachment filename
-		if nameReader, err := propContext.GetPropertyReader(3708, nil); err == nil {
-			if name, err := nameReader.GetString(); err == nil {
-				attachObj.AttachFilename = &name
-			}
+		// Populate attachment properties from the property context
+		// This deserializes typed properties like AttachFilename
+		if err := propContext.Populate(attachObj, nil); err != nil {
+			log.Printf("Failed to populate attachment properties: %v", err)
+			// Continue anyway - attachment might still have some data
 		}
 
 		attachments = append(attachments, attachObj)
